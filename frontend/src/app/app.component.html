@@ -27,18 +27,21 @@
     <div class="col mb-4" *ngFor="let card of players">
       <div class="card"
            [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
-        <div class="card-body">
-          <p class="card-title">{{card.name}}</p>
-          <p class="card-text text-center">{{card.choice || "&nbsp;"}}</p>
+        <div class="card-body  text-center">
+          <h5 class="card-title">{{card.name}}</h5>
+          <p class="card-text">{{card.choice || "&nbsp;"}}</p>
         </div>
       </div>
     </div>
     <div class="col mb-4" *ngIf="showReset">
-      <div class="card">
+      <a href="#" class="card" tabindex="0" (click)="sendReset(); $event.preventDefault()" role="button">
         <div class="card-body text-center">
-          <a href="#" class="btn btn-primary" (click)="sendReset()">Reset</a>
+            <span class="fa-stack fa-2x">
+              <i class="far fa-recycle fa-stack-1x"></i>
+              <i class="fal fa-trash fa-stack-2x"></i>
+            </span>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 

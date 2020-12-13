@@ -37,6 +37,10 @@ export class AppComponent implements OnDestroy {
   }
 
   register(): void {
+    if (this.name === 'observeronly') {
+      this.registered = true;
+      return;
+    }
     this.submitted = true;
     console.log('Registering', this.name);
     this.socketService.send({action: 'register', name: this.name});

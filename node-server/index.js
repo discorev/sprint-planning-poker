@@ -73,6 +73,10 @@ wss.on('connection', ws => {
             console.log(ws.name, 'made choice', data.choice);
             // Was the user making a choice, or, deselecting a choice
             if (data.choice) {
+                // Don't allow choices to be changed after they've been revealed
+                if (choices.length == names.length) {
+                    return;
+                }
                 choices.push({name: ws.name, choice: data.choice});
                 response.selected = true;
 
@@ -81,7 +85,7 @@ wss.on('connection', ws => {
                     response = {choices};
                 }
             } else {
-                // make sure this user's not got an option in choices
+                // Mark that the user deselected their choice
                 choices = choices.filter(choice => choice.name != ws.name);
                 response.selected = false;
             }

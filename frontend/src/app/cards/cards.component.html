@@ -1,13 +1,13 @@
 <div class="row">
   <div class="col">
     <div class="card-deck">
-      <div *ngFor="let card of cards" class="card"
+      <a href="#" *ngFor="let card of cards" class="card" tabindex="0"
            [ngClass]="{'bg-primary': card == selection, 'text-white': card == selection}"
-           (click)="choose(card)">
+           (click)="choose(card); $event.preventDefault()" role="button">
         <div class="card-body">
           <p class="card-text text-center">{{card}}</p>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 </div>
