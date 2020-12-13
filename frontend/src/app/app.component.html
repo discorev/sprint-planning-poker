@@ -1,0 +1,30 @@
+<div class="container" style="margin-top:10px;">
+  <form *ngIf="!registered">
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" name="name" class="form-control" id="name" [(ngModel)]="name">
+    </div>
+    <button type="submit" class="btn btn-primary" (click)="register()">Submit</button>
+  </form>
+
+  <div class="card mb-2" *ngIf="registered">
+    <div class="card-header">
+      Your Choice
+    </div>
+    <div class="card-body">
+      <app-cards  [(selection)]="selection" (selectionChange)="selectionChanged($event)"></app-cards>
+    </div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-5">
+    <div class="col mb-4" *ngFor="let card of players">
+      <div class="card"
+           [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
+        <div class="card-body">
+          <p class="card-title">{{card.name}}</p>
+          <p class="card-text text-center">{{card.choice || "&nbsp;"}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,146 @@
+const WebSocket = require('ws');
+
+// Construct the websocket server
+const wss = new WebSocket.Server({ port: 8080 });
+
+names = [];
+choices = [];
+
+// Handle new conenctions
+wss.on('connection', ws => {
+    // Add a state flag to this client as part of the heartbeat
+    ws.isAlive = true;
+
+    // A ping will be sent on an interval to check if clients
+    // are still connected, when they respond, be sure to tag
+    // them as still alive to prevent disconnecting them.
+    ws.on('pong', () => {
+        ws.isAlive = true;
+    });
+    
+    // Handle messages from clients
+    ws.on('message', function incoming(message) {
+        var data = JSON.parse(message);
+
+        // if the message is a register message, check if anyoen else has used
+        // this name, if not, let it be used
+        if(data.action === "register") {
+            if (names.indexOf(data.data) === -1) {
+                choices = [];
+                names.push(data.data);
+                ws.name = data.data;
+                console.log("registered:", ws.name);
+                ws.send(JSON.stringify({
+                    error: null,
+                    players: names
+                }));
+                const msg = JSON.stringify({players: names, reset: true});
+                wss.clients.forEach(function each(client) {
+                    if (client != ws && client.readyState === WebSocket.OPEN) {
+                        client.send(msg);
+                    }
+                });
+            } else {
+                ws.send('{"error": "name is already taken"}');
+                return;
+            }
+        }
+
+        // All the rest of the options require registration
+        if (!ws.name) {
+            ws.send('{"error": "not registered"}');
+            return;
+        }
+
+        if(data.action === "reset") {
+            // reset all local votes
+            choices = []; // reset the local choice array
+            const msg = JSON.stringify({reset: true, originator: ws.name});
+            wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(msg);
+                }
+            });
+        }
+
+        // If someone has made a choice, record it
+        if(data.action === "record-choice") {
+            var response = {name: ws.name};
+            console.log(ws.name, 'made choice', data.choice);
+            // Was the user making a choice, or, deselecting a choice
+            if (data.choice) {
+                choices.push({name: ws.name, choice: data.choice});
+                response.selected = true;
+
+                // Reveal all choices to all users
+                if (choices.length == names.length) {
+                    response = {choices};
+                }
+            } else {
+                // make sure this user's not got an option in choices
+                choices = choices.filter(choice => choice.name != ws.name);
+                response.selected = false;
+            }
+            const msg = JSON.stringify(response);
+            wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(msg);
+                }
+            });
+        }
+
+        if (data.action === "sendmessage") {
+
+            data = data.data;
+            data.name = ws.name;
+            data = JSON.stringify(data);
+            wss.clients.forEach(function each(client) {
+                // if (client !== ws && client.readyState === WebSocket.OPEN) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(data);
+                }
+            });
+        }
+    });
+
+    ws.on('close', function close(code, reason) {
+        console.log('Closed', ws.name, code, reason);
+        if(ws.name) {
+            names = names.filter(name => name != ws.name);
+            console.log(ws.name, 'unregistered');
+            const msg = JSON.stringify({players: names, reset: true});
+            wss.clients.forEach(function each(client) {
+                if (client != ws && client.readyState === WebSocket.OPEN) {
+                    client.send(msg);
+                }
+            });
+        }
+    })
+
+    // Log that the client has connected
+    console.log('Connected');
+});
+
+// Setup a timer to act as a heart-beat to check that the clients
+// are still alive (if someone's browser craches etc. they will disconnect)
+const interval = setInterval(() => {
+    wss.clients.forEach(function each(ws) {
+        if (ws.isAlive === false) {
+            if(ws.name) {
+                names = names.filter(name => name != ws.name);
+                console.log(ws.name, 'unregistered');
+                const msg = JSON.stringify({players: names, reset: true});
+                wss.clients.forEach(function each(client) {
+                    if (client != ws && client.readyState === WebSocket.OPEN) {
+                        client.send(msg);
+                    }
+                });
+            }
+            console.log('Client is dead');
+            return ws.terminate();
+        }
+
+        ws.isAlive = false;
+        ws.ping(() => {});
+    });
+}, 3000);

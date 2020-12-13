@@ -1,0 +1,13 @@
+<div class="row">
+  <div class="col">
+    <div class="card-deck">
+      <div *ngFor="let card of cards" class="card"
+           [ngClass]="{'bg-primary': card == selection, 'text-white': card == selection}"
+           (click)="choose(card)">
+        <div class="card-body">
+          <p class="card-text text-center">{{card}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
