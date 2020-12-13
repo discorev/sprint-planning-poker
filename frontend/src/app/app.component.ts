@@ -13,14 +13,14 @@ export class AppComponent implements OnDestroy {
   name = '';
   selection?: string;
   registered = false;
+  error?: string;
+  submitted = false;
   players: Person[] = [];
+  showReset = false;
   private destroyed$ = new Subject();
 
-  constructor(private socketService: WebSocketService) {}
-
-  register(): void {
-    console.log('Registering', this.name);
-    const socket$ = this.socketService.connect(this.name).pipe(
+  constructor(private socketService: WebSocketService) {
+    const socket$ = this.socketService.connect().pipe(
       retryWhen(errors => errors.pipe(
         tap(err => {
           console.error('Got error', err);
@@ -36,15 +36,25 @@ export class AppComponent implements OnDestroy {
     );
   }
 
+  register(): void {
+    this.submitted = true;
+    console.log('Registering', this.name);
+    this.socketService.send({action: 'register', name: this.name});
+  }
+
   selectionChanged(newSelection: string): void {
     this.socketService.send({choice: newSelection, action: 'record-choice'});
+  }
+
+  sendReset(): void {
+    this.socketService.send({action: 'reset'});
   }
 
   handleMessage(msg: any): void {
     if (!this.registered) {
       if (msg.error) {
-        // Display the error
-        console.error(msg);
+        this.submitted = false;
+        this.error = msg.error;
       } else {
         this.registered = true;
         console.log('registered');
@@ -68,6 +78,7 @@ export class AppComponent implements OnDestroy {
     }
 
     if (msg.reset) {
+      this.showReset = false;
       this.selection = undefined;
       this.players.forEach(player => {
         player.choice = undefined;
@@ -76,6 +87,7 @@ export class AppComponent implements OnDestroy {
     }
 
     if (msg.choices) {
+      this.showReset = true;
       msg.choices.forEach((choice: Person) => {
         // find the matching player and update their choice
         const idx = this.players.map(player => player.name).indexOf(choice.name);

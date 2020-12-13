@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  websocket_api: 'ws://localhost:3050'
+  websocket_api: 'ws://localhost:8080'
 };
 
 /*

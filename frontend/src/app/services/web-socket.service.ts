@@ -18,7 +18,7 @@ export class WebSocketService implements OnDestroy {
    * Connect to the websocket
    * @returns Observable for messages sent from the server.
    */
-  public connect(name: string): Observable<any> {
+  public connect(): Observable<any> {
     if (!this.socket$ || this.socket$.closed) {
       this.socket$ = webSocket({
         url: environment.websocket_api,
@@ -27,9 +27,6 @@ export class WebSocketService implements OnDestroy {
       });
       this.closeSubject.subscribe(test => {
         console.log(test);
-      });
-      this.openSubject.subscribe(_ => {
-        this.socket$?.next({action: 'register', data: name});
       });
     }
     return this.socket$;

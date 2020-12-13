@@ -25,10 +25,14 @@ wss.on('connection', ws => {
         // if the message is a register message, check if anyoen else has used
         // this name, if not, let it be used
         if(data.action === "register") {
-            if (names.indexOf(data.data) === -1) {
+            if (data.name.length < 3) {
+                ws.send('{"error": "name is too short"}');
+                return;
+            }
+            if (names.indexOf(data.name) === -1) {
                 choices = [];
-                names.push(data.data);
-                ws.name = data.data;
+                names.push(data.name);
+                ws.name = data.name;
                 console.log("registered:", ws.name);
                 ws.send(JSON.stringify({
                     error: null,
