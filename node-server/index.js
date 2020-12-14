@@ -98,19 +98,6 @@ wss.on('connection', ws => {
                 }
             });
         }
-
-        if (data.action === "sendmessage") {
-
-            data = data.data;
-            data.name = ws.name;
-            data = JSON.stringify(data);
-            wss.clients.forEach(function each(client) {
-                // if (client !== ws && client.readyState === WebSocket.OPEN) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(data);
-                }
-            });
-        }
     });
 
     ws.on('close', function close(code, reason) {
