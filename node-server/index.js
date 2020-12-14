@@ -69,14 +69,17 @@ wss.on('connection', ws => {
 
         // If someone has made a choice, record it
         if(data.action === "record-choice") {
+            // Don't allow choices to be changed after they've been revealed
+            if (choices.length == names.length) {
+                return;
+            }
+            // First ensure any choice already made is removed
+            choices = choices.filter(choice => choice.name != ws.name);
             var response = {name: ws.name};
             console.log(ws.name, 'made choice', data.choice);
             // Was the user making a choice, or, deselecting a choice
             if (data.choice) {
-                // Don't allow choices to be changed after they've been revealed
-                if (choices.length == names.length) {
-                    return;
-                }
+                // Then add the the new choice
                 choices.push({name: ws.name, choice: data.choice});
                 response.selected = true;
 
@@ -86,7 +89,6 @@ wss.on('connection', ws => {
                 }
             } else {
                 // Mark that the user deselected their choice
-                choices = choices.filter(choice => choice.name != ws.name);
                 response.selected = false;
             }
             const msg = JSON.stringify(response);
