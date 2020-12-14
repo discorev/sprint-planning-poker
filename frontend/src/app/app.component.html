@@ -19,7 +19,7 @@
       Your Choice
     </div>
     <div class="card-body">
-      <app-cards  [(selection)]="selection" (selectionChange)="selectionChanged($event)"></app-cards>
+      <app-cards [(selection)]="selection" [disabled]="showReset" (selectionChange)="selectionChanged($event)"></app-cards>
     </div>
   </div>
 
