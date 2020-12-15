@@ -88,7 +88,7 @@ export class AppComponent implements OnDestroy {
     }
 
     if (msg.players) {
-      this.players = msg.players.map((player: string) => {
+      this.players = (msg.players as string[]).map((player: string) => {
         return {name: player, selected: false};
       });
       console.log(this.players);
