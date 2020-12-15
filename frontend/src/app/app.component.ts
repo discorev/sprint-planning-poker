@@ -17,6 +17,7 @@ export class AppComponent implements OnDestroy {
   submitted = false;
   players: Person[] = [];
   showReset = false;
+  connected = false;
   private destroyed$ = new Subject();
 
   constructor(private socketService: WebSocketService) {
@@ -24,11 +25,22 @@ export class AppComponent implements OnDestroy {
       retryWhen(errors => errors.pipe(
         tap(err => {
           console.error('Got error', err);
+          this.connected = false;
+          jQuery('#connectingModal').modal('show');
         }),
         delay(1000)
       )),
       takeUntil(this.destroyed$),
     );
+    this.socketService.openSubject$.pipe(
+      takeUntil(this.destroyed$)
+    ).subscribe(next => {
+      jQuery('#connectingModal').modal('hide');
+      this.connected = true;
+      if (this.registered && this.name !== 'observeronly') {
+        this.socketService.send({action: 'register', name: this.name});
+      }
+    });
     socket$.subscribe(
       (msg) => this.handleMessage(msg),
       (err) => console.log(err),
@@ -55,6 +67,7 @@ export class AppComponent implements OnDestroy {
   }
 
   handleMessage(msg: any): void {
+    this.connected = true;
     if (!this.registered) {
       if (msg.error) {
         this.submitted = false;
