@@ -36,7 +36,8 @@ wss.on('connection', ws => {
                 console.log("registered:", ws.name);
                 ws.send(JSON.stringify({
                     error: null,
-                    players: names
+                    players: names,
+                    reset: true
                 }));
                 const msg = JSON.stringify({players: names, reset: true});
                 wss.clients.forEach(function each(client) {
