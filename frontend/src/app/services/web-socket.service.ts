@@ -3,7 +3,6 @@ import { webSocket, WebSocketSubject } from 'rxjs/WebSocket';
 import { Observable, Subject } from 'rxjs';
 
 import { environment } from '@env/environment';
-import { subscribeOn } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +10,8 @@ import { subscribeOn } from 'rxjs/operators';
 export class WebSocketService implements OnDestroy {
   // Holds the connection to the websocket
   private socket$?: WebSocketSubject<any>;
-  private openSubject = new Subject();
-  private closeSubject = new Subject();
+  public openSubject$ = new Subject();
+  public closeSubject$ = new Subject();
 
   /**
    * Connect to the websocket
@@ -22,10 +21,10 @@ export class WebSocketService implements OnDestroy {
     if (!this.socket$ || this.socket$.closed) {
       this.socket$ = webSocket({
         url: environment.websocket_api,
-        openObserver: this.openSubject,
-        closeObserver: this.closeSubject
+        openObserver: this.openSubject$,
+        closeObserver: this.closeSubject$
       });
-      this.closeSubject.subscribe(test => {
+      this.closeSubject$.subscribe(test => {
         console.log(test);
       });
     }
@@ -48,8 +47,8 @@ export class WebSocketService implements OnDestroy {
   public close(): void {
     if (this.socket$) {
       this.socket$.complete();
-      this.openSubject.complete();
-      this.closeSubject.complete();
+      this.openSubject$.complete();
+      this.closeSubject$.complete();
       this.socket$ = undefined;
     }
   }
