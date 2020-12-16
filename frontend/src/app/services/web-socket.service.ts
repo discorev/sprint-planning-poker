@@ -4,7 +4,7 @@ import { Observable, Subject, of } from 'rxjs';
 
 import { environment } from '@env/environment';
 import { Person } from '@app/models/person.model';
-import { delay, retryWhen, takeUntil, tap } from 'rxjs/operators';
+import { delay, retryWhen, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +41,7 @@ export class WebSocketService implements OnDestroy {
     // Remove the name from local storage
     localStorage.removeItem('name');
     // Setup a subscription to re-send the registration when the socket reconnects
-    this.openSubject$.subscribe(next => {
+    this.openSubject$.subscribe(_ => {
       if (this.isRegistered) {
         // tslint:disable-next-line:no-shadowed-variable
         const name = localStorage.getItem('name');
@@ -85,13 +85,17 @@ export class WebSocketService implements OnDestroy {
     if (!this.isRegistered) {
       if (msg.error) {
         localStorage.removeItem('name');
-        this.hasRegistered$.next(false);
         this.lastError = msg.error;
+        this.hasRegistered$.next(false);
       } else {
         this.isRegistered = true;
         this.hasRegistered$.next(true);
         console.log('registered');
       }
+    }
+
+    if (msg.name && msg.selected !== undefined) {
+      const person = msg as Person;
     }
 
     this.onMessage$.next(msg);
