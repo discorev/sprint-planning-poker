@@ -1,7 +1,6 @@
-<div class="container" style="margin-top:10px;">
-  <app-register *ngIf="!registered" (registeredChange)="registered = $event"></app-register>
-
-  <div class="card mb-2" *ngIf="registered">
+<app-register *ngIf="!registered" (registeredChange)="registered = $event"></app-register>
+<div class="container" *ngIf="registered" style="margin-top:10px;">
+  <div class="card mb-2">
     <div class="card-header">
       Your Choice
     </div>

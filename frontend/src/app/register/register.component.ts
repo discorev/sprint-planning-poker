@@ -21,6 +21,7 @@ export class RegisterComponent implements OnDestroy {
 
   register(): void {
     // Do something
+    this.error = '';
     this.webSocketService.register(this.name).pipe(
       takeUntil(this.destroyed$)
     ).subscribe(result => {
