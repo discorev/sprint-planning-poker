@@ -1,8 +1,10 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/WebSocket';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 
 import { environment } from '@env/environment';
+import { Person } from '@app/models/person.model';
+import { delay, retryWhen, takeUntil, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -10,25 +12,58 @@ import { environment } from '@env/environment';
 export class WebSocketService implements OnDestroy {
   // Holds the connection to the websocket
   private socket$?: WebSocketSubject<any>;
+  private isRegistered = false;
+  private hasRegistered$ = new Subject<boolean>();
+
   public openSubject$ = new Subject();
   public closeSubject$ = new Subject();
+  public onMessage$ = new Subject();
+  public lastError?: string;
+
+  constructor() {
+    this.socket$ = webSocket({
+      url: environment.websocket_api,
+      openObserver: this.openSubject$,
+      closeObserver: this.closeSubject$
+    });
+    this.socket$.pipe(
+      retryWhen(errors => errors.pipe(
+        tap(err => {
+          console.error('Got error', err);
+        }),
+        delay(1000)
+      ))
+    ).subscribe(
+      (msg) => this.handleMessage(msg),
+      (err) => console.log(err),
+      () => console.log('complete')
+    );
+    // Remove the name from local storage
+    localStorage.removeItem('name');
+    // Setup a subscription to re-send the registration when the socket reconnects
+    this.openSubject$.subscribe(next => {
+      if (this.isRegistered) {
+        // tslint:disable-next-line:no-shadowed-variable
+        const name = localStorage.getItem('name');
+        if (name) {
+          this.send({action: 'register', name});
+        }
+      }
+    });
+  }
 
   /**
-   * Connect to the websocket
-   * @returns Observable for messages sent from the server.
+   * Register the user and return a boolean once it's confirmed it was successful.
+   * @param name - The name to register with
    */
-  public connect(): Observable<any> {
+  public register(name: string): Observable<boolean> {
     if (!this.socket$ || this.socket$.closed) {
-      this.socket$ = webSocket({
-        url: environment.websocket_api,
-        openObserver: this.openSubject$,
-        closeObserver: this.closeSubject$
-      });
-      this.closeSubject$.subscribe(test => {
-        console.log(test);
-      });
+      return of(false);
     }
-    return this.socket$;
+    // send a message registering the user
+    localStorage.setItem('name', name);
+    this.socket$.next({action: 'register', name});
+    return this.hasRegistered$;
   }
 
   /**
@@ -39,6 +74,27 @@ export class WebSocketService implements OnDestroy {
     if (this.socket$ && !this.socket$.closed) {
       this.socket$.next(msg);
     }
+  }
+
+
+  /**
+   * Handle a message from the websocket
+   * @param msg - the recieved message
+   */
+  handleMessage(msg: any): void {
+    if (!this.isRegistered) {
+      if (msg.error) {
+        localStorage.removeItem('name');
+        this.hasRegistered$.next(false);
+        this.lastError = msg.error;
+      } else {
+        this.isRegistered = true;
+        this.hasRegistered$.next(true);
+        console.log('registered');
+      }
+    }
+
+    this.onMessage$.next(msg);
   }
 
   /**
