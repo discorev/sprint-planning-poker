@@ -8,6 +8,6 @@ jobs:
         - cd ${TRAVIS_BUILD_DIR}/frontend
         - npm config set "@fortawesome:registry" https://npm.fontawesome.com/
         - npm config set "//npm.fontawesome.com/:_authToken" $FONTAWESOME_NPM_TOKEN
-      after_success: ./node_modules/.bin/codecov
+      after_success: codecov --root ${TRAVIS_BUILD_DIR}/frontend
     - name: /node-server
       before_install: cd ${TRAVIS_BUILD_DIR}/node-server
