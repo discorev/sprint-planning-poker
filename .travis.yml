@@ -3,8 +3,11 @@ node_js:
   - 14
 jobs:
   include:
-    - before_install:
-      - cd ${TRAVIS_BUILD_DIR}/frontend
-      - npm config set "@fortawesome:registry" https://npm.fontawesome.com/
-      - npm config set "//npm.fontawesome.com/:_authToken" $FONTAWESOME_NPM_TOKEN
-    - before_install: cd ${TRAVIS_BUILD_DIR}/node-server
+    - name: /frontend
+      before_install:
+        - cd ${TRAVIS_BUILD_DIR}/frontend
+        - npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+        - npm config set "//npm.fontawesome.com/:_authToken" $FONTAWESOME_NPM_TOKEN
+      after_success: ./node_modules/.bin/codecov
+    - name: /node-server
+      before_install: cd ${TRAVIS_BUILD_DIR}/node-server
