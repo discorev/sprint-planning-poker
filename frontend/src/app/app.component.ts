@@ -1,8 +1,10 @@
 import { Component, OnDestroy } from '@angular/core';
 import { WebSocketService } from '@app/services/web-socket.service';
 import { Subject } from 'rxjs';
-import { retryWhen, takeUntil, tap, delay } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { Person } from '@app/models/person.model';
+
+import * as confetti from 'canvas-confetti';
 
 @Component({
   selector: 'app-root',
@@ -21,13 +23,13 @@ export class AppComponent implements OnDestroy {
   constructor(private socketService: WebSocketService) {
     this.socketService.openSubject$.pipe(
       takeUntil(this.destroyed$)
-    ).subscribe(next => {
+    ).subscribe(_ => {
       jQuery('#connectingModal').modal('hide');
       this.connected = true;
     });
     this.socketService.closeSubject$.pipe(
       takeUntil(this.destroyed$)
-    ).subscribe(next => {
+    ).subscribe(_ => {
       jQuery('#connectingModal').modal('show');
       this.connected = false;
     });
@@ -83,6 +85,17 @@ export class AppComponent implements OnDestroy {
           this.players.push(choice);
         }
       });
+      if (msg.choices.every((choice: Person) => choice.choice === msg.choices[0].choice)) {
+        // @ts-ignore
+        confetti.create(null, { resize: true })({
+          particleCount: 100,
+          spread: 90,
+          origin: {
+            y: (1),
+            x: (0.5)
+          }
+        });
+      }
     }
     console.log(msg);
   }
