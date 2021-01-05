@@ -36,11 +36,11 @@ describe('RegisterComponent', () => {
     const registerSpy = webSocketServiceSpy.register.and.returnValue(of(true));
     component.registeredChange.subscribe((result: boolean) => expect(result).toBeTrue());
     component.register();
-    expect(registerSpy.calls.any()).toBe(true, 'register called');
+    expect(registerSpy.calls.count()).toBe(1, 'register called');
   });
 
   it('should set and show an error when it fails to register', () => {
-    // Setup the spy to fail to regiser and return an error
+    // Setup the spy to fail to register and return an error
     const registerSpy = webSocketServiceSpy.register.and.returnValue(of(false));
     (Object.getOwnPropertyDescriptor(webSocketServiceSpy, 'lastError')?.get as jasmine.Spy).and.returnValue('Cannot be empty');
 
@@ -49,13 +49,31 @@ describe('RegisterComponent', () => {
 
     // Call register and validate that the service is called and error is set correctly
     component.register();
-    expect(registerSpy.calls.any()).toBe(true, 'register called');
+    expect(registerSpy.calls.count()).toBe(1, 'register called');
     expect(component.error).toBe('Cannot be empty');
 
     // Verify the HTML is updated to show the error
     fixture.detectChanges();
     const alertEl: HTMLElement = fixture.debugElement.query(By.css('.alert')).nativeElement;
     expect(alertEl.textContent).toBe('Failed! Cannot be empty ×');
+  });
+
+  it('should set only show an error if one is returned', () => {
+    // Setup the spy to fail to register and return an error
+    const registerSpy = webSocketServiceSpy.register.and.returnValue(of(false));
+    (Object.getOwnPropertyDescriptor(webSocketServiceSpy, 'lastError')?.get as jasmine.Spy).and.returnValue(null);
+
+    // Watch the registerChanged event to ensure it returns false
+    component.registeredChange.subscribe((result: boolean) => expect(result).toBeFalse());
+
+    // Call register and validate that the service is called and error is set correctly
+    component.register();
+    expect(registerSpy.calls.count()).toBe(1, 'register called');
+    expect(component.error).toBe('');
+
+    // Verify the HTML is updated to show the error
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.alert'))).toBeNull();
   });
 
   it('should bind name input to name property', () => {
@@ -66,5 +84,29 @@ describe('RegisterComponent', () => {
       nameInputEl.dispatchEvent(new Event('input'));
       expect(component.name).toBe('Test');
     });
+  });
+
+  it('should disable the submit button when name is too short', () => {
+    const submitButtonEl: HTMLButtonElement = fixture.debugElement.query(By.css('button')).nativeElement;
+    expect(submitButtonEl.disabled).toBeTrue();
+    component.name = 'a';
+    fixture.detectChanges();
+    expect(submitButtonEl.disabled).toBeTrue();
+    component.name = 'aa';
+    fixture.detectChanges();
+    expect(submitButtonEl.disabled).toBeTrue();
+    component.name = 'aaa';
+    fixture.detectChanges();
+    expect(submitButtonEl.disabled).toBeFalse();
+  });
+
+  it('should disable the submit button when submitted is true', () => {
+    const submitButtonEl: HTMLButtonElement = fixture.debugElement.query(By.css('button')).nativeElement;
+    component.name = 'aaa';
+    fixture.detectChanges();
+    expect(submitButtonEl.disabled).toBeFalse();
+    component.submitted = true;
+    fixture.detectChanges();
+    expect(submitButtonEl.disabled).toBeTrue();
   });
 });
