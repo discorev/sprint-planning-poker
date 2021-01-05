@@ -4,13 +4,14 @@
 module.exports = function (config) {
   config.set({
     basePath: '',
-    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    frameworks: ['jasmine', '@angular-devkit/build-angular', 'jquery-3.4.0'],
     plugins: [
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma')
+      require('@angular-devkit/build-angular/plugins/karma'),
+      require('karma-jquery')
     ],
     client: {
       jasmine: {
@@ -46,6 +47,9 @@ module.exports = function (config) {
       }
     },
     singleRun: false,
-    restartOnFileChange: true
+    restartOnFileChange: true,
+    files: [
+      "./node_modules/bootstrap/dist/js/bootstrap.min.js"
+    ]
   });
 };
