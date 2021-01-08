@@ -118,11 +118,88 @@ describe('AppComponent', () => {
     onMessage$.next({ name: 'player2', selected: true });
   });
 
-  // it('should add a player to the list if they are not already there and make a choice', () => {
-  //   const expected = [
-  //     { name: 'player2', selected: true }
+  it('should add a player to the list if they are not already there and make a choice', () => {
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual([
+        { name: 'player2', selected: true }
+      ]);
+    });
+    onMessage$.next({ name: 'player2', selected: true });
+  });
+
+  it('should reset data when a reset message is sent', () => {
+    app.players = [
+      { name: 'player1', selected: true, choice: '1' },
+      { name: 'player2', selected: true, choice: '1' },
+      { name: 'player3', selected: true, choice: '1' }
+    ];
+    app.showReset = true;
+    app.selection = '?';
+
+    const expected = [
+      { name: 'player1', selected: false, choice: undefined },
+      { name: 'player2', selected: false, choice: undefined },
+      { name: 'player3', selected: false, choice: undefined }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.showReset).toBeFalse();
+      expect(app.selection).toBeUndefined();
+      expect(app.players).toEqual(expected);
+    });
+    onMessage$.next({ reset: true });
+  });
+
+  it('should reveal all players choices', () => {
+    app.players = [
+      { name: 'player1', selected: false },
+      { name: 'player2', selected: true }
+    ];
+
+    const expected = [
+      { name: 'player1', selected: true, choice: '?' },
+      { name: 'player2', selected: true, choice: '1' },
+      { name: 'player3', selected: true, choice: '2' }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      fixture.detectChanges();
+      fixture.whenStable().then(() => {
+        const cards: DebugElement[] = fixture.debugElement.queryAll(By.css('.card'));
+        cards.forEach((cardDe, idx) => {
+          const cardEl: HTMLElement = cardDe.nativeElement;
+          expect(cardEl.classList.contains('border-primary')).toBeTrue();
+          const cardTextEl: HTMLElement = cardDe.query(By.css('.card-text')).nativeElement;
+          expect(cardTextEl.textContent).toBe(expected[idx].choice);
+        });
+      });
+    });
+    onMessage$.next({ choices: [
+        { name: 'player1', selected: true, choice: '?' },
+        { name: 'player2', selected: true, choice: '1' },
+        { name: 'player3', selected: true, choice: '2' }
+      ]
+    });
+  });
+
+  // it('should fire the confetti cannon when all players choose the same value', () => {
+  //   app.players = [
+  //     { name: 'player1', selected: false }
   //   ];
-  //   onMessage$.subscribe(_ => expect(app.players).toEqual(expected));
-  //   onMessage$.next({ name: 'player2', selected: true });
+  //
+  //   const expected = [
+  //     { name: 'player1', selected: true, choice: '?' }
+  //   ];
+  //   onMessage$.subscribe(_ => {
+  //     expect(app.players).toEqual(expected);
+  //     fixture.detectChanges();
+  //     fixture.whenStable().then(() => {
+  //       const confetiiEl = fixture.debugElement.query(By.css('canvas'));
+  //       expect(confetiiEl).toBeTruthy();
+  //     });
+  //   });
+  //   onMessage$.next({ choices: [
+  //       { name: 'player1', selected: true, choice: '?' }
+  //     ]
+  //   });
   // });
 });
