@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 import { WebSocketService } from '@app/services/web-socket.service';
@@ -52,27 +52,28 @@ describe('AppComponent', () => {
   });
 
   it('should show the connecting modal when the close subject is called', () => {
-    closeSubject$.next('');
-    fixture.whenStable().then(() => {
+    closeSubject$.subscribe(_ => {
+      fixture.detectChanges();
+      tick();
+
       const modalBdEl: HTMLElement = fixture.debugElement.query(By.css('.modal-backdrop')).nativeElement;
       expect(modalBdEl).toBeTruthy();
-      closeSubject$.complete();
     });
 
+    closeSubject$.next('');
   });
 
   it('should hide the connecting modal when the open subject is called', () => {
-    closeSubject$.next('');
-    fixture.whenStable().then(() => {
-      const modalBdEl: HTMLElement = fixture.debugElement.query(By.css('.modal-backdrop')).nativeElement;
-      expect(modalBdEl).toBeTruthy();
-      openSubject$.next('');
 
-      fixture.whenStable().then(() => {
-        const modalBdDebugEl: DebugElement = fixture.debugElement.query(By.css('.modal-backdrop'));
-        expect(modalBdDebugEl).toBeNull();
-      });
+    closeSubject$.next('');
+    openSubject$.subscribe(_ => {
+      fixture.detectChanges();
+      tick();
+
+      const modalBdDebugEl: DebugElement = fixture.debugElement.query(By.css('.modal-backdrop'));
+      expect(modalBdDebugEl).toBeNull();
     });
+    openSubject$.next('');
   });
 
   it('should send selection to the WebSocket when it is changed', () => {
@@ -181,25 +182,24 @@ describe('AppComponent', () => {
     });
   });
 
-  // it('should fire the confetti cannon when all players choose the same value', () => {
-  //   app.players = [
-  //     { name: 'player1', selected: false }
-  //   ];
-  //
-  //   const expected = [
-  //     { name: 'player1', selected: true, choice: '?' }
-  //   ];
-  //   onMessage$.subscribe(_ => {
-  //     expect(app.players).toEqual(expected);
-  //     fixture.detectChanges();
-  //     fixture.whenStable().then(() => {
-  //       const confetiiEl = fixture.debugElement.query(By.css('canvas'));
-  //       expect(confetiiEl).toBeTruthy();
-  //     });
-  //   });
-  //   onMessage$.next({ choices: [
-  //       { name: 'player1', selected: true, choice: '?' }
-  //     ]
-  //   });
-  // });
+  it('should fire the confetti cannon when all players choose the same value', () => {
+    app.players = [
+      { name: 'player1', selected: false }
+    ];
+
+    const expected = [
+      { name: 'player1', selected: true, choice: '?' }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      fixture.detectChanges();
+      tick();
+      const confetiiEl = fixture.debugElement.query(By.css('canvas'));
+      expect(confetiiEl).toBeTruthy();
+    });
+    onMessage$.next({ choices: [
+        { name: 'player1', selected: true, choice: '?' }
+      ]
+    });
+  });
 });
