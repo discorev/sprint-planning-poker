@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "nodemon",
         "start": "node index.js",
-        "test-dev": "jasmine",
+        "test": "jasmine",
         "coverage": "nyc --reporter=html jasmine"
     },
     "devDependencies": {
