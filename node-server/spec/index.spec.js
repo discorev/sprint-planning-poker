@@ -73,10 +73,15 @@ describe("WebSocket Server", function () {
   it("should error if two players try to use the same name", function(done) {
     const ws1 = new WebSocket('ws://localhost:8080');
     const ws2 = new WebSocket('ws://localhost:8080');
-    let registered = false;
+    let count = 0;
     ws2.on('message', function incoming(data) {
-      if (registered === true) {
-        expect(data).toBe('{"error": "name is already taken"}');
+      if (count === 0) {
+        expect(JSON.parse(data)).toEqual({players: ['bbb'], reset: true}, 'Did not recieve register for player 1');
+      } else if (count === 1) {
+        expect(data).toBe('{"error": "name is already taken"}', 'expect an error from player 2');
+      }
+      count += 1;
+      if (count === 2) {
         ws1.close();
         ws2.close();
         done();
@@ -84,13 +89,13 @@ describe("WebSocket Server", function () {
     });
 
     ws1.on('message', function incoming(data) {
-      expect(JSON.parse(data)).toEqual({error: null, players: ['aaa'], reset: true});
+      expect(JSON.parse(data)).toEqual({error: null, players: ['bbb'], reset: true});
       registered = true;
-      ws2.send('{"action": "register", "name": "aaa"}');
+      ws2.send('{"action": "register", "name": "bbb"}');
     });
 
     ws1.on('open', () => {
-      ws1.send('{"action": "register", "name": "aaa"}');
+      ws1.send('{"action": "register", "name": "bbb"}');
     });
   });
 
