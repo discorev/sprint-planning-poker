@@ -121,7 +121,7 @@ wss.on('connection', ws => {
 
 // Setup a timer to act as a heart-beat to check that the clients
 // are still alive (if someone's browser craches etc. they will disconnect)
-const interval = setInterval(() => {
+_ = setInterval(() => {
     wss.clients.forEach(function each(ws) {
         if (ws.isAlive === false) {
             if(ws.name) {
@@ -142,3 +142,6 @@ const interval = setInterval(() => {
         ws.ping(() => {});
     });
 }, 3000);
+
+// expose the WebSocket Server
+module.exports = wss;

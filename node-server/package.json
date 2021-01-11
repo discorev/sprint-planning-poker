@@ -5,6 +5,20 @@
     },
     "scripts": {
         "dev": "nodemon",
-        "start": "node index.js"
+        "start": "node index.js",
+        "test": "nyc jasmine"
+    },
+    "devDependencies": {
+        "codecov": "^3.8.1",
+        "jasmine": "^3.6.3",
+        "nyc": "^15.1.0"
+    },
+    "nyc": {
+        "exclude": "**/*.spec.js",
+        "reporter": [
+            "lcovonly",
+            "html",
+            "text-summary"
+        ]
     }
 }
