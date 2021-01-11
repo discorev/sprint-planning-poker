@@ -69,4 +69,17 @@ describe("WebSocket Server", function () {
       ws.send('{"action": "register", "name": "aaa"}');
     });
   });
+
+  it("should return an error if the user has not registered", function(done) {
+    const ws = new WebSocket('ws://localhost:8080');
+    ws.on('message', function incoming(data) {
+      expect(data).toBe('{"error": "not registered"}');
+      ws.close();
+      done();
+    });
+
+    ws.on('open', () => {
+      ws.send('{"action": "test"}');
+    });
+  });
 });
