@@ -70,6 +70,30 @@ describe("WebSocket Server", function () {
     });
   });
 
+  it("should error if two players try to use the same name", function(done) {
+    const ws1 = new WebSocket('ws://localhost:8080');
+    const ws2 = new WebSocket('ws://localhost:8080');
+    let registered = false;
+    ws2.on('message', function incoming(data) {
+      if (registered === true) {
+        expect(data).toBe('{"error": "name is already taken"}');
+        ws1.close();
+        ws2.close();
+        done();
+      }
+    });
+
+    ws1.on('message', function incoming(data) {
+      expect(JSON.parse(data)).toEqual({error: null, players: ['aaa'], reset: true});
+      registered = true;
+      ws2.send('{"action": "register", "name": "aaa"}');
+    });
+
+    ws1.on('open', () => {
+      ws1.send('{"action": "register", "name": "aaa"}');
+    });
+  });
+
   it("should return an error if the user has not registered", function(done) {
     const ws = new WebSocket('ws://localhost:8080');
     ws.on('message', function incoming(data) {
@@ -80,6 +104,32 @@ describe("WebSocket Server", function () {
 
     ws.on('open', () => {
       ws.send('{"action": "test"}');
+    });
+  });
+
+  it("should forward reset message to all connected clients", function(done) {
+    const ws = new WebSocket('ws://localhost:8080');
+    const ws2 = new WebSocket('ws://localhost:8080');
+
+    let count = 0;
+    function callbackCheck(data) {
+      if (data.includes('originator')) {
+        expect(JSON.parse(data)).toEqual({reset: true, originator: 'aaa'});
+        count += 1;
+        if (count == 2) {
+          ws.close();
+          ws2.close();
+          done();
+        }
+      }
+    }
+
+    ws.on('message', callbackCheck);
+    ws2.on('message', callbackCheck);
+
+    ws.on('open', () => {
+      ws.send('{"action": "register", "name": "aaa"}');
+      ws.send('{"action": "reset"}');
     });
   });
 });
