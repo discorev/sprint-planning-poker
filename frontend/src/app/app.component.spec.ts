@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 import { WebSocketService } from '@app/services/web-socket.service';
@@ -51,29 +51,22 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should show the connecting modal when the close subject is called', () => {
-    closeSubject$.subscribe(_ => {
-      fixture.detectChanges();
-      tick();
-
-      const modalBdEl: HTMLElement = fixture.debugElement.query(By.css('.modal-backdrop')).nativeElement;
-      expect(modalBdEl).toBeTruthy();
-    });
-
+  it('should show the connecting modal when the close subject is called', (done) => {
+    jQuery('#connectingModal').on('shown.bs.modal', done);
     closeSubject$.next('');
+    fixture.detectChanges();
   });
 
-  it('should hide the connecting modal when the open subject is called', () => {
+  it('should hide the connecting modal when the open subject is called', (done) => {
+    jQuery('#connectingModal').on('hide.bs.modal', done);
+    jQuery('#connectingModal').on('shown.bs.modal', function() {
+      closeSubject$.complete();
+      openSubject$.next('');
+      fixture.detectChanges();
+    });
 
     closeSubject$.next('');
-    openSubject$.subscribe(_ => {
-      fixture.detectChanges();
-      tick();
-
-      const modalBdDebugEl: DebugElement = fixture.debugElement.query(By.css('.modal-backdrop'));
-      expect(modalBdDebugEl).toBeNull();
-    });
-    openSubject$.next('');
+    fixture.detectChanges();
   });
 
   it('should send selection to the WebSocket when it is changed', () => {
@@ -89,21 +82,23 @@ describe('AppComponent', () => {
     const sendSpy = webSocketServiceSpy.send;
     app.sendReset();
     fixture.detectChanges();
-    expect(sendSpy.calls.count()).toBe(1);
-    const expected: any = {action: 'reset'};
-    expect(sendSpy.calls.first().args[0]).toEqual(expected);
+    expect(webSocketServiceSpy.send.calls.count()).toBe(1);
+    expect(webSocketServiceSpy.send.calls.first().args[0]).toEqual({action: 'reset'});
   });
 
-  it('should accept a list of players from the WebSocket', () => {
+  it('should accept a list of players from the WebSocket', (done) => {
     const players = ['player1', 'player2', 'player3'];
     const expected = players.map(player => {
       return { name: player, selected: false};
     });
-    onMessage$.subscribe(_ => expect(app.players).toEqual(expected));
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      done();
+    });
     onMessage$.next({ players });
   });
 
-  it('should update a players status when they make a selection', () => {
+  it('should update a players status when they make a selection', (done) => {
     app.players = [
       { name: 'player1', selected: false },
       { name: 'player2', selected: false },
@@ -115,20 +110,24 @@ describe('AppComponent', () => {
       { name: 'player2', selected: true },
       { name: 'player3', selected: false }
     ];
-    onMessage$.subscribe(_ => expect(app.players).toEqual(expected));
-    onMessage$.next({ name: 'player2', selected: true });
-  });
-
-  it('should add a player to the list if they are not already there and make a choice', () => {
     onMessage$.subscribe(_ => {
-      expect(app.players).toEqual([
-        { name: 'player2', selected: true }
-      ]);
+      expect(app.players).toEqual(expected);
+      done();
     });
     onMessage$.next({ name: 'player2', selected: true });
   });
 
-  it('should reset data when a reset message is sent', () => {
+  it('should add a player to the list if they are not already there and make a choice', (done) => {
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual([
+        { name: 'player2', selected: true }
+      ]);
+      done();
+    });
+    onMessage$.next({ name: 'player2', selected: true });
+  });
+
+  it('should reset data when a reset message is sent', (done) => {
     app.players = [
       { name: 'player1', selected: true, choice: '1' },
       { name: 'player2', selected: true, choice: '1' },
@@ -146,15 +145,30 @@ describe('AppComponent', () => {
       expect(app.showReset).toBeFalse();
       expect(app.selection).toBeUndefined();
       expect(app.players).toEqual(expected);
+      done();
     });
     onMessage$.next({ reset: true });
   });
 
-  it('should reveal all players choices', () => {
+  it('should reveal all players choices', (done) => {
+    app.registered = true; // This is needed to make the players show up
     app.players = [
       { name: 'player1', selected: false },
       { name: 'player2', selected: true }
     ];
+    fixture.detectChanges();
+    const cards: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
+    expect(cards.length).toBe(2);
+    cards.forEach((cardDbg, idx) => {
+      const card: HTMLElement = cardDbg.nativeElement;
+      if (idx == 0) {
+        expect(card.classList.contains('border-primary')).toBeFalse();
+      } else {
+        expect(card.classList.contains('border-primary')).toBeTrue();
+      }
+      const cardTextEl: HTMLElement = cardDbg.query(By.css('.card-title')).nativeElement;
+      expect(cardTextEl.textContent).toBe(app.players[idx].name ?? '');
+    });
 
     const expected = [
       { name: 'player1', selected: true, choice: '?' },
@@ -163,15 +177,17 @@ describe('AppComponent', () => {
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
-      fixture.detectChanges();
       fixture.whenStable().then(() => {
-        const cards: DebugElement[] = fixture.debugElement.queryAll(By.css('.card'));
-        cards.forEach((cardDe, idx) => {
-          const cardEl: HTMLElement = cardDe.nativeElement;
-          expect(cardEl.classList.contains('border-primary')).toBeTrue();
-          const cardTextEl: HTMLElement = cardDe.query(By.css('.card-text')).nativeElement;
+        fixture.detectChanges();
+        const cards: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
+        expect(cards.length).toBe(expected.length);
+        cards.forEach((cardDbg, idx) => {
+          const card: HTMLElement = cardDbg.nativeElement;
+          expect(card.classList.contains('border-primary')).toBeTrue();
+          const cardTextEl: HTMLElement = cardDbg.query(By.css('.card-text')).nativeElement;
           expect(cardTextEl.textContent).toBe(expected[idx].choice);
         });
+        done();
       });
     });
     onMessage$.next({ choices: [
@@ -182,7 +198,7 @@ describe('AppComponent', () => {
     });
   });
 
-  it('should fire the confetti cannon when all players choose the same value', () => {
+  it('should fire the confetti cannon when all players choose the same value', (done) => {
     app.players = [
       { name: 'player1', selected: false }
     ];
@@ -192,10 +208,7 @@ describe('AppComponent', () => {
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
-      fixture.detectChanges();
-      tick();
-      const confetiiEl = fixture.debugElement.query(By.css('canvas'));
-      expect(confetiiEl).toBeTruthy();
+      done();
     });
     onMessage$.next({ choices: [
         { name: 'player1', selected: true, choice: '?' }
