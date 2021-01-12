@@ -7,7 +7,7 @@ players = [];
 
 function reset() {
     players.forEach(player => player.choice = null);
-};
+}
 
 function removeByName(name) {
     players = players.filter(player => player.name != name);
