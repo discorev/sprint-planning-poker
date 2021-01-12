@@ -59,7 +59,7 @@ describe('AppComponent', () => {
 
   it('should hide the connecting modal when the open subject is called', (done) => {
     jQuery('#connectingModal').on('hide.bs.modal', done);
-    jQuery('#connectingModal').on('shown.bs.modal', function() {
+    jQuery('#connectingModal').on('shown.bs.modal', () => {
       closeSubject$.complete();
       openSubject$.next('');
       fixture.detectChanges();
@@ -157,11 +157,11 @@ describe('AppComponent', () => {
       { name: 'player2', selected: true }
     ];
     fixture.detectChanges();
-    const cards: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
-    expect(cards.length).toBe(2);
-    cards.forEach((cardDbg, idx) => {
+    const cardsBeforeReveal: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
+    expect(cardsBeforeReveal.length).toBe(2);
+    cardsBeforeReveal.forEach((cardDbg, idx) => {
       const card: HTMLElement = cardDbg.nativeElement;
-      if (idx == 0) {
+      if (idx === 0) {
         expect(card.classList.contains('border-primary')).toBeFalse();
       } else {
         expect(card.classList.contains('border-primary')).toBeTrue();
