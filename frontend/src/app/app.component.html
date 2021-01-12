@@ -11,7 +11,7 @@
 
   <div class="row row-cols-1 row-cols-md-5">
     <div class="col mb-4" *ngFor="let card of players">
-      <div class="card"
+      <div class="card player-choice"
            [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
         <div class="card-body  text-center">
           <h5 class="card-title">{{card.name}}</h5>
