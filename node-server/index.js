@@ -1,10 +1,26 @@
 const WebSocket = require('ws');
-
+const Player = require('./player');
 // Construct the websocket server
 const wss = new WebSocket.Server({ port: 8080 });
 
-names = [];
-choices = [];
+players = [];
+
+function reset() {
+    players.forEach(player => player.choice = null);
+};
+
+function removeByName(name) {
+    players = players.filter(player => player.name != name);
+    console.log(name, 'unregistered');
+}
+
+function listNames() {
+    return players.map(player => player.name);
+}
+
+function allHaveChosen() {
+    return players.every(player => (player.choice != null || player.snooze === true));
+}
 
 // Handle new conenctions
 wss.on('connection', ws => {
@@ -26,28 +42,28 @@ wss.on('connection', ws => {
         // this name, if not, let it be used
         if(data.action === "register") {
             if (data.name.length < 3) {
-                ws.send('{"error": "name is too short"}');
+                ws.send('{"action": "register","error": "name is too short"}');
                 return;
             }
-            if (names.indexOf(data.name) === -1) {
-                choices = [];
-                names.push(data.name);
+            if (players.find(el => el.name == data.name)) {
+                ws.send('{"action": "register","error": "name is already taken"}');
+                return;
+            } else {
+                reset();
+                players.push(new Player(data.name));
                 ws.name = data.name;
-                console.log("registered:", ws.name);
+                const playerNames = listNames();
                 ws.send(JSON.stringify({
                     error: null,
-                    players: names,
+                    players: playerNames,
                     reset: true
                 }));
-                const msg = JSON.stringify({players: names, reset: true});
+                const msg = JSON.stringify({players: playerNames, reset: true});
                 wss.clients.forEach(function each(client) {
                     if (client != ws && client.readyState === WebSocket.OPEN) {
                         client.send(msg);
                     }
                 });
-            } else {
-                ws.send('{"error": "name is already taken"}');
-                return;
             }
         }
 
@@ -59,7 +75,7 @@ wss.on('connection', ws => {
 
         if(data.action === "reset") {
             // reset all local votes
-            choices = []; // reset the local choice array
+            reset();
             const msg = JSON.stringify({reset: true, originator: ws.name});
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
@@ -70,29 +86,44 @@ wss.on('connection', ws => {
 
         // If someone has made a choice, record it
         if(data.action === "record-choice") {
+            // locate the player that made the choice
+            const player = players.find(player => player.name === ws.name);
+            player.snooze = false; // this player is awake
+
             // Don't allow choices to be changed after they've been revealed
-            if (choices.length == names.length) {
+            if(allHaveChosen()) {
                 return;
             }
-            // First ensure any choice already made is removed
-            choices = choices.filter(choice => choice.name != ws.name);
-            var response = {name: ws.name};
-            console.log(ws.name, 'made choice', data.choice);
-            // Was the user making a choice, or, deselecting a choice
-            if (data.choice) {
-                // Then add the the new choice
-                choices.push({name: ws.name, choice: data.choice});
-                response.selected = true;
 
-                // Reveal all choices to all users
-                if (choices.length == names.length) {
-                    response = {choices};
-                }
-            } else {
-                // Mark that the user deselected their choice
-                response.selected = false;
+            player.choice = data.choice;
+            console.log(player.name, 'made choice', data.choice);
+
+            // Construct the response object
+            var response = {name: player.name, selected: (data.choice != null)};
+
+            // If all players have made their choice, return the choices
+            if(allHaveChosen()) {
+                response = {choices: players};
             }
+
             const msg = JSON.stringify(response);
+            wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(msg);
+                }
+            });
+        }
+
+        if (data.action === "snooze" && data.player) {
+            const player = players.find(player => player.name === data.player);
+            if (!player) {
+                ws.send('{"action": "snooze","error": "Player not found"}');
+                return;
+            }
+
+            // Toggle the player's snooze status and update all clients
+            player.snooze = !player.snooze;
+            const msg = JSON.stringify({action: "snooze", player: player.name, snooze: player.snooze});
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(msg);
@@ -104,9 +135,8 @@ wss.on('connection', ws => {
     ws.on('close', function close(code, reason) {
         console.log('Closed', ws.name, code, reason);
         if(ws.name) {
-            names = names.filter(name => name != ws.name);
-            console.log(ws.name, 'unregistered');
-            const msg = JSON.stringify({players: names, reset: true});
+            removeByName(ws.name);
+            const msg = JSON.stringify({players: listNames(), reset: true});
             wss.clients.forEach(function each(client) {
                 if (client != ws && client.readyState === WebSocket.OPEN) {
                     client.send(msg);
@@ -125,9 +155,8 @@ _ = setInterval(() => {
     wss.clients.forEach(function each(ws) {
         if (ws.isAlive === false) {
             if(ws.name) {
-                names = names.filter(name => name != ws.name);
-                console.log(ws.name, 'unregistered');
-                const msg = JSON.stringify({players: names, reset: true});
+                removeByName(ws.name);
+                const msg = JSON.stringify({players: listNames(), reset: true});
                 wss.clients.forEach(function each(client) {
                     if (client != ws && client.readyState === WebSocket.OPEN) {
                         client.send(msg);
