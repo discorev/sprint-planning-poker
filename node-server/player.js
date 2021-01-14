@@ -1,7 +1,7 @@
 class Player {
     name;
     choice;
-    snooze = false;
+    snoozed = false;
     constructor(name) {
         this.name = name;
         this.choice = null;

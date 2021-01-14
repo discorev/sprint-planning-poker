@@ -19,7 +19,7 @@ function listNames() {
 }
 
 function allHaveChosen() {
-    return players.every(player => (player.choice != null || player.snooze === true));
+    return players.every(player => (player.choice != null || player.snoozed === true));
 }
 
 // Handle new conenctions
@@ -88,7 +88,7 @@ wss.on('connection', ws => {
         if(data.action === "record-choice") {
             // locate the player that made the choice
             const player = players.find(player => player.name === ws.name);
-            player.snooze = false; // this player is awake
+            player.snoozed = false; // this player is awake
 
             // Don't allow choices to be changed after they've been revealed
             if(allHaveChosen()) {
@@ -122,8 +122,8 @@ wss.on('connection', ws => {
             }
 
             // Toggle the player's snooze status and update all clients
-            player.snooze = !player.snooze;
-            const msg = JSON.stringify({action: "snooze", player: player.name, snooze: player.snooze});
+            player.snoozed = !player.snoozed;
+            const msg = JSON.stringify({action: "snooze", player: player.name, snoozed: player.snoozed});
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(msg);
