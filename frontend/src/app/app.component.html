@@ -13,7 +13,10 @@
     <div class="col mb-4" *ngFor="let card of players">
       <div class="card player-choice"
            [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
-        <div class="card-body  text-center">
+        <div class="card-body text-center">
+          <span class="btn-snooze" [ngClass]="{'text-muted': !card.snoozed}">
+            <a href="#" (click)="snoozePlayer(card)" class="text-reset"><i class="far fa-snooze"></i></a>
+          </span>
           <h5 class="card-title">{{card.name}}</h5>
           <p class="card-text">{{card.choice || "&nbsp;"}}</p>
         </div>

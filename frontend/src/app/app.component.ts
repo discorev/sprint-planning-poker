@@ -46,21 +46,33 @@ export class AppComponent implements OnDestroy {
     this.socketService.send({action: 'reset'});
   }
 
+  snoozePlayer(player: Person): void {
+    this.socketService.send({action: 'snooze', player: player.name});
+  }
+
   handleMessage(msg: any): void {
     if (msg.name && msg.selected !== undefined) {
       const idx = this.players.map(player => player.name).indexOf(msg.name);
       if (idx !== -1) {
         this.players[idx].selected = (msg.selected === true);
+        this.players[idx].snoozed = false;
       } else {
-        this.players.push({name: msg.name, selected: (msg.selected === true)});
+        this.players.push({name: msg.name, selected: (msg.selected === true), snoozed: false});
       }
     }
 
     if (msg.players) {
       this.players = (msg.players as string[]).map((player: string) => {
-        return {name: player, selected: false};
+        return {name: player, selected: false, snoozed: false};
       });
       console.log(this.players);
+    }
+
+    if (msg.action && msg.action === 'snooze') {
+      const idx = this.players.map(player => player.name).indexOf(msg.player);
+      if (idx !== -1) {
+        this.players[idx].snoozed = msg.snoozed;
+      }
     }
 
     if (msg.reset) {
@@ -80,6 +92,7 @@ export class AppComponent implements OnDestroy {
         if (idx !== -1) {
           this.players[idx].choice = choice.choice;
           this.players[idx].selected = true;
+          this.players[idx].snoozed = choice.snoozed;
         } else {
           choice.selected = true;
           this.players.push(choice);
