@@ -424,5 +424,21 @@ describe("WebSocket Server", function () {
       ws1.send(JSON.stringify({action: 'snooze', player: 'player2'}));
       ws1.send(JSON.stringify({action: 'record-choice', choice: '1'}));
     });
+
+    it('should reveal the choices if one of the two players has made a choice and the other is snoozed', function(done) {
+      ws2.on('message', function(data) {
+        data = JSON.parse(data);
+        if (data.choices) {
+          expect(data).toEqual({choices: jasmine.arrayWithExactContents([
+            { name: 'player1', choice: '1', snoozed: false },
+            { name: 'player2', choice: null, snoozed: true }
+          ])});
+          done();
+        } else {
+          ws1.send(JSON.stringify({action: 'snooze', player: 'player2'}));
+        }
+      });
+      ws1.send(JSON.stringify({action: 'record-choice', choice: '1'}));
+    });
   });
 });
