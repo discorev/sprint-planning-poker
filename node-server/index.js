@@ -129,6 +129,15 @@ wss.on('connection', ws => {
                     client.send(msg);
                 }
             });
+
+            if (players.length > 1 && allHaveChosen()) {
+                const msg = JSON.stringify({choices: players});
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(msg);
+                    }
+                })
+            }
         }
     });
 

@@ -58,8 +58,9 @@ describe('AppComponent', () => {
   });
 
   it('should hide the connecting modal when the open subject is called', (done) => {
-    jQuery('#connectingModal').on('hide.bs.modal', done);
-    jQuery('#connectingModal').on('shown.bs.modal', () => {
+    const connectingModal = jQuery('#connectingModal');
+    connectingModal.on('hide.bs.modal', done);
+    connectingModal.on('shown.bs.modal', () => {
       closeSubject$.complete();
       openSubject$.next('');
       fixture.detectChanges();
@@ -89,7 +90,7 @@ describe('AppComponent', () => {
   it('should accept a list of players from the WebSocket', (done) => {
     const players = ['player1', 'player2', 'player3'];
     const expected = players.map(player => {
-      return { name: player, selected: false};
+      return { name: player, selected: false, snoozed: false};
     });
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -100,15 +101,15 @@ describe('AppComponent', () => {
 
   it('should update a players status when they make a selection', (done) => {
     app.players = [
-      { name: 'player1', selected: false },
-      { name: 'player2', selected: false },
-      { name: 'player3', selected: false }
+      { name: 'player1', selected: false, snoozed: false },
+      { name: 'player2', selected: false, snoozed: false },
+      { name: 'player3', selected: false, snoozed: false }
     ];
 
     const expected = [
-      { name: 'player1', selected: false },
-      { name: 'player2', selected: true },
-      { name: 'player3', selected: false }
+      { name: 'player1', selected: false, snoozed: false },
+      { name: 'player2', selected: true, snoozed: false },
+      { name: 'player3', selected: false, snoozed: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -120,7 +121,7 @@ describe('AppComponent', () => {
   it('should add a player to the list if they are not already there and make a choice', (done) => {
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual([
-        { name: 'player2', selected: true }
+        { name: 'player2', selected: true, snoozed: false }
       ]);
       done();
     });
@@ -129,17 +130,17 @@ describe('AppComponent', () => {
 
   it('should reset data when a reset message is sent', (done) => {
     app.players = [
-      { name: 'player1', selected: true, choice: '1' },
-      { name: 'player2', selected: true, choice: '1' },
-      { name: 'player3', selected: true, choice: '1' }
+      { name: 'player1', selected: true, choice: '1', snoozed: false },
+      { name: 'player2', selected: true, choice: '1', snoozed: false },
+      { name: 'player3', selected: true, choice: '1', snoozed: false }
     ];
     app.showReset = true;
     app.selection = '?';
 
     const expected = [
-      { name: 'player1', selected: false, choice: undefined },
-      { name: 'player2', selected: false, choice: undefined },
-      { name: 'player3', selected: false, choice: undefined }
+      { name: 'player1', selected: false, choice: undefined, snoozed: false },
+      { name: 'player2', selected: false, choice: undefined, snoozed: false },
+      { name: 'player3', selected: false, choice: undefined, snoozed: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.showReset).toBeFalse();
@@ -153,8 +154,8 @@ describe('AppComponent', () => {
   it('should reveal all players choices', (done) => {
     app.registered = true; // This is needed to make the players show up
     app.players = [
-      { name: 'player1', selected: false },
-      { name: 'player2', selected: true }
+      { name: 'player1', selected: false, snoozed: false },
+      { name: 'player2', selected: true, snoozed: false }
     ];
     fixture.detectChanges();
     const cardsBeforeReveal: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
@@ -171,9 +172,9 @@ describe('AppComponent', () => {
     });
 
     const expected = [
-      { name: 'player1', selected: true, choice: '?' },
-      { name: 'player2', selected: true, choice: '1' },
-      { name: 'player3', selected: true, choice: '2' }
+      { name: 'player1', selected: true, choice: '?', snoozed: false },
+      { name: 'player2', selected: true, choice: '1', snoozed: false },
+      { name: 'player3', selected: true, choice: '2', snoozed: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -191,28 +192,65 @@ describe('AppComponent', () => {
       });
     });
     onMessage$.next({ choices: [
-        { name: 'player1', selected: true, choice: '?' },
-        { name: 'player2', selected: true, choice: '1' },
-        { name: 'player3', selected: true, choice: '2' }
+        { name: 'player1', selected: true, choice: '?', snoozed: false },
+        { name: 'player2', selected: true, choice: '1', snoozed: false },
+        { name: 'player3', selected: true, choice: '2', snoozed: false }
       ]
     });
   });
 
   it('should fire the confetti cannon when all players choose the same value', (done) => {
     app.players = [
-      { name: 'player1', selected: false }
+      { name: 'player1', selected: false, snoozed: false }
     ];
 
     const expected = [
-      { name: 'player1', selected: true, choice: '?' }
+      { name: 'player1', selected: true, choice: '?', snoozed: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
       done();
     });
     onMessage$.next({ choices: [
-        { name: 'player1', selected: true, choice: '?' }
+        { name: 'player1', selected: true, choice: '?', snoozed: false }
       ]
     });
+  });
+
+  it('should send a snooze message when the snooze button is pressed for a player', () => {
+    app.players = [
+      { name: 'player1', selected: false, snoozed: false }
+    ];
+    app.registered = true;
+    fixture.detectChanges();
+    const snoozeSpan: DebugElement = fixture.debugElement.query(By.css('.btn-snooze'));
+    expect(snoozeSpan.nativeElement.classList.contains('text-muted')).toBeTrue();
+
+    const sendSpy = webSocketServiceSpy.send;
+    const snoozeLink: HTMLElement = snoozeSpan.query(By.css('a')).nativeElement;
+    snoozeLink.click();
+    expect(sendSpy.calls.count()).toBe(1);
+    const expected: any = {player: 'player1', action: 'snooze'};
+    expect(sendSpy.calls.first().args[0]).toEqual(expected);
+  });
+
+  it('should mark a player as snoozed when a snooze message comes through', (done) => {
+    app.players = [
+      { name: 'player1', selected: false, snoozed: false }
+    ];
+    app.registered = true;
+    fixture.detectChanges();
+    const snoozeSpan: DebugElement = fixture.debugElement.query(By.css('.btn-snooze'));
+
+    const expected = [
+      { name: 'player1', selected: false, snoozed: true }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      fixture.detectChanges();
+      expect(snoozeSpan.nativeElement.classList.contains('text-muted')).toBeFalse();
+      done();
+    });
+    onMessage$.next({ action: 'snooze', player: 'player1', snoozed: true });
   });
 });
