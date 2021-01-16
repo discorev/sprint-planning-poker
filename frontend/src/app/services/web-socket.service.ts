@@ -1,10 +1,10 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, Subject, of } from 'rxjs';
 
 import { environment } from '@env/environment';
-import { Person } from '@app/models/person.model';
 import { delay, retryWhen, tap } from 'rxjs/operators';
+import { WebSocketClientService } from '@app/services/web-socket-client.service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,12 +20,10 @@ export class WebSocketService implements OnDestroy {
   public onMessage$ = new Subject();
   public lastError?: string;
 
-  constructor() {
-    this.socket$ = webSocket({
-      url: environment.websocket_api,
-      openObserver: this.openSubject$,
-      closeObserver: this.closeSubject$
-    });
+  constructor(private webSocketClient: WebSocketClientService) {
+    webSocketClient.onOpen$.subscribe(event => this.openSubject$.next(event));
+    webSocketClient.onClose$.subscribe(event => this.closeSubject$.next(event));
+    this.socket$ = this.webSocketClient.connect(environment.websocket_api);
     this.socket$.pipe(
       retryWhen(errors => errors.pipe(
         tap(err => {
@@ -63,7 +61,7 @@ export class WebSocketService implements OnDestroy {
     // send a message registering the user
     localStorage.setItem('name', name);
     this.socket$.next({action: 'register', name});
-    return this.hasRegistered$;
+    return this.hasRegistered$.asObservable();
   }
 
   /**
@@ -92,10 +90,6 @@ export class WebSocketService implements OnDestroy {
         this.hasRegistered$.next(true);
         console.log('registered');
       }
-    }
-
-    if (msg.name && msg.selected !== undefined) {
-      const person = msg as Person;
     }
 
     this.onMessage$.next(msg);
