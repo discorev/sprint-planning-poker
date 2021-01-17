@@ -32,9 +32,7 @@ export class WebSocketService implements OnDestroy {
         delay(1000)
       ))
     ).subscribe(
-      (msg) => this.handleMessage(msg),
-      (err) => console.log(err),
-      () => console.log('complete')
+      (msg) => this.handleMessage(msg)
     );
     // Remove the name from local storage
     localStorage.removeItem('name');

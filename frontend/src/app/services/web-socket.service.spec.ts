@@ -65,6 +65,12 @@ describe('WebSocketService', () => {
     onClose$.next('Success');
   });
 
+  it('should log errors from the socket to the console', (done) => {
+    const errorSpy = spyOn(console, 'error');
+    errorSpy.and.callFake(done);
+    socketSourceSubject$.error('test');
+  });
+
   it('should forward send events to the websocket', (done) => {
     socketDestinationSubject$.subscribe(msg => {
       expect(msg).toBe('data');
@@ -101,6 +107,14 @@ describe('WebSocketService', () => {
     });
   });
 
+  it('should return false when registering if the socket is closed', (done) => {
+    socketSubject$.unsubscribe();
+    service.register('test').subscribe(success => {
+      expect(success).toBeFalse();
+      done();
+    });
+  });
+
   it('should forward received messages to onMessage$', (done) => {
     let count = 0;
     service.onMessage$.subscribe(msg => {
@@ -120,6 +134,43 @@ describe('WebSocketService', () => {
         socketSourceSubject$.next({error: 'test'});
       }, 5);
     });
+    service.register('test');
+  });
+
+  it('should re-register if the socket re-opens after registering', (done) => {
+    let count = 0;
+    socketDestinationSubject$.subscribe(msg => {
+      expect(msg).toEqual({action: 'register', name: 'test'});
+      expect(localStorage.getItem('name')).toBe('test');
+      if (count === 0) {
+        count += 1;
+        socketSourceSubject$.next('success');
+        onOpen$.next('');
+      } else {
+        done();
+      }
+    });
+    service.register('test');
+  });
+
+  it('should not re-register if name is removed from local storage', (done) => {
+    let count = 0;
+    socketDestinationSubject$.subscribe(msg => {
+      expect(msg).toEqual({action: 'register', name: 'test'});
+      expect(localStorage.getItem('name')).toBe('test');
+      localStorage.removeItem('name');
+      if (count === 0) {
+        count += 1;
+        socketSourceSubject$.next('success');
+        onOpen$.next('');
+      } else {
+        done.fail('Should not have re-registered');
+      }
+    });
+    setTimeout(() => {
+      expect(count).toBe(1);
+      done();
+    }, 500);
     service.register('test');
   });
 });
