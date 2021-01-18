@@ -98,7 +98,10 @@ export class AppComponent implements OnDestroy {
           this.players.push(choice);
         }
       });
-      if (msg.choices.every((choice: Person) => choice.choice === msg.choices[0].choice)) {
+      // Find the first choice made by a non-snoozed player
+      const firstChoice = msg.choices.find((person: Person) => person.snoozed === false);
+      // Check that every player's choice matches that, except snoozed players
+      if (msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
         // @ts-ignore
         confetti.create(null, { resize: true })({
           particleCount: 100,
