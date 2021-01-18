@@ -209,10 +209,30 @@ describe('AppComponent', () => {
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
+      expect(app.confetti).toBeTrue();
       done();
     });
     onMessage$.next({ choices: [
         { name: 'player1', selected: true, choice: '?', snoozed: false }
+      ]
+    });
+  });
+
+  it('should not fire the confetti cannon if choices are revealed and all players are snoozed', (done) => {
+    app.players = [
+      { name: 'player1', selected: false, snoozed: false }
+    ];
+
+    const expected = [
+      { name: 'player1', selected: true, choice: undefined, snoozed: true }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      expect(app.confetti).toBeFalse();
+      done();
+    });
+    onMessage$.next({ choices: [
+        { name: 'player1', selected: true, snoozed: true }
       ]
     });
   });
@@ -252,5 +272,23 @@ describe('AppComponent', () => {
       done();
     });
     onMessage$.next({ action: 'snooze', player: 'player1', snoozed: true });
+  });
+
+  it('should ignore a snooze message for an unknown player', (done) => {
+    app.players = [
+      { name: 'player1', selected: false, snoozed: false }
+    ];
+    app.registered = true;
+    fixture.detectChanges();
+
+    const expected = [
+      { name: 'player1', selected: false, snoozed: false }
+    ];
+    onMessage$.subscribe(_ => {
+      expect(app.players).toEqual(expected);
+      fixture.detectChanges();
+      done();
+    });
+    onMessage$.next({ action: 'snooze', player: 'player2', snoozed: true });
   });
 });
