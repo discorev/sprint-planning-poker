@@ -209,6 +209,7 @@ describe('AppComponent', () => {
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
+      expect(app.confetti).toBeTrue();
       done();
     });
     onMessage$.next({ choices: [

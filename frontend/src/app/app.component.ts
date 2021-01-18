@@ -17,6 +17,7 @@ export class AppComponent implements OnDestroy {
   error?: string;
   players: Person[] = [];
   showReset = false;
+  confetti = false;
   connected = false;
   private destroyed$ = new Subject();
 
@@ -78,6 +79,7 @@ export class AppComponent implements OnDestroy {
     if (msg.reset) {
       this.showReset = false;
       this.selection = undefined;
+      this.confetti = false;
       this.players.forEach(player => {
         player.choice = undefined;
         player.selected = false;
@@ -102,6 +104,7 @@ export class AppComponent implements OnDestroy {
       const firstChoice = msg.choices.find((person: Person) => person.snoozed === false);
       // Check that every player's choice matches that, except snoozed players
       if (msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
+        this.confetti = true;
         // @ts-ignore
         confetti.create(null, { resize: true })({
           particleCount: 100,
