@@ -101,9 +101,9 @@ export class AppComponent implements OnDestroy {
         }
       });
       // Find the first choice made by a non-snoozed player
-      const firstChoice = msg.choices.find((person: Person) => person.snoozed === false);
+      const firstChoice = msg.choices.find((person: Person) => person.snoozed === false)?.choice;
       // Check that every player's choice matches that, except snoozed players
-      if (msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
+      if (firstChoice && msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
         this.confetti = true;
         // @ts-ignore
         confetti.create(null, { resize: true })({
