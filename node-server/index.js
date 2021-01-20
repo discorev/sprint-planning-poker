@@ -49,6 +49,9 @@ wss.on('connection', ws => {
                 ws.send('{"action": "register","error": "name is already taken"}');
                 return;
             } else {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    return;
+                }
                 reset();
                 players.push(new Player(data.name));
                 ws.name = data.name;
