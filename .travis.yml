@@ -1,6 +1,9 @@
 language: node_js
 node_js:
   - 14
+sudo: required
+services:
+  - docker
 jobs:
   include:
     - name: /frontend
@@ -11,4 +14,10 @@ jobs:
       after_success: codecov
     - name: /node-server
       before_install: cd ${TRAVIS_BUILD_DIR}/node-server
-      after_success: codecov
+      after_success:
+        - codecov
+      deploy:
+        provider: script
+        script: bash scripts/deploy.sh
+        on:
+          branch: main
