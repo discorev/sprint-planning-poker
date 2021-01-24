@@ -306,7 +306,7 @@ describe("WebSocket Server", function () {
       function closeConnection() {
         count += 1;
         if (count === finalTotal) {
-          done(); 
+          done();
         }
       }
 
