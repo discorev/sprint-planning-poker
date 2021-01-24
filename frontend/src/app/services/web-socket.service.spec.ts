@@ -84,7 +84,7 @@ describe('WebSocketService', () => {
       expect(msg).toEqual({action: 'register', name: 'test'});
       expect(localStorage.getItem('name')).toBe('test');
       setTimeout(() => {
-        socketSourceSubject$.next('success');
+        socketSourceSubject$.next({action: 'register'});
       }, 5);
     });
     service.register('test').subscribe(success => {
@@ -98,7 +98,7 @@ describe('WebSocketService', () => {
       expect(msg).toEqual({action: 'register', name: 'test'});
       expect(localStorage.getItem('name')).toBe('test');
       setTimeout(() => {
-        socketSourceSubject$.next({error: 'failed to register'});
+        socketSourceSubject$.next({action: 'register', error: 'failed to register'});
       }, 5);
     });
     service.register('test').subscribe(success => {
@@ -119,9 +119,9 @@ describe('WebSocketService', () => {
     let count = 0;
     service.onMessage$.subscribe(msg => {
       if (count === 0) {
-        expect(msg).toBe('success');
+        expect(msg).toEqual({action: 'register'});
       } else {
-        expect(msg).toEqual({error: 'test'});
+        expect(msg).toEqual({action: 'register', error: 'test'});
         done();
       }
       count += 1;
@@ -129,9 +129,9 @@ describe('WebSocketService', () => {
     socketDestinationSubject$.pipe(first()).subscribe(msg => {
       expect(msg).toEqual({action: 'register', name: 'test'});
       expect(localStorage.getItem('name')).toBe('test');
-      socketSourceSubject$.next('success');
+      socketSourceSubject$.next({action: 'register'});
       setTimeout(() => {
-        socketSourceSubject$.next({error: 'test'});
+        socketSourceSubject$.next({action: 'register', error: 'test'});
       }, 5);
     });
     service.register('test');
@@ -144,7 +144,7 @@ describe('WebSocketService', () => {
       expect(localStorage.getItem('name')).toBe('test');
       if (count === 0) {
         count += 1;
-        socketSourceSubject$.next('success');
+        socketSourceSubject$.next({action: 'register'});
         onOpen$.next('');
       } else {
         done();
