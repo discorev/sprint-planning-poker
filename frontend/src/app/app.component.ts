@@ -63,8 +63,9 @@ export class AppComponent implements OnDestroy {
     }
 
     if (msg.players) {
-      this.players = (msg.players as string[]).map((player: string) => {
-        return {name: player, selected: false, snoozed: false};
+      this.players = (msg.players as Person[]).map(player => {
+        player.selected = false;
+        return player;
       });
       console.log(this.players);
     }
@@ -101,7 +102,7 @@ export class AppComponent implements OnDestroy {
         }
       });
       // Find the first choice made by a non-snoozed player
-      const firstChoice = msg.choices.find((person: Person) => person.snoozed === false)?.choice;
+      const firstChoice = msg.choices.find((person: Person) => !person.snoozed)?.choice;
       // Check that every player's choice matches that, except snoozed players
       if (firstChoice && msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
         this.confetti = true;

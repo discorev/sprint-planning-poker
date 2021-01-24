@@ -88,9 +88,14 @@ describe('AppComponent', () => {
   });
 
   it('should accept a list of players from the WebSocket', (done) => {
-    const players = ['player1', 'player2', 'player3'];
+    const players = [
+      { name: 'player1', choice: null, snoozed: false },
+      { name: 'player2', choice: null, snoozed: false },
+      { name: 'player3', choice: null, snoozed: false }];
     const expected = players.map(player => {
-      return { name: player, selected: false, snoozed: false};
+      // @ts-ignore
+      player.selected = false;
+      return jasmine.objectContaining(player);
     });
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
