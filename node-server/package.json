@@ -1,4 +1,12 @@
 {
+    "version": "1.0.0",
+    "description": "Sprint planning poker in-memory WebSocket server",
+    "license" : "BSD-3-Clause",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/discorev/sprint-planning-poker.git",
+        "directory": "node-server"
+    },
     "dependencies": {
         "ws": "7.3.1"
     },
@@ -6,7 +14,8 @@
         "dev": "nodemon",
         "start": "node index.js",
         "test": "nyc ts-node node_modules/jasmine/bin/jasmine",
-        "build": "tsc"
+        "build": "tsc",
+        "get-version": "echo $npm_package_version"
     },
     "devDependencies": {
         "@types/jasmine": "^3.6.3",
