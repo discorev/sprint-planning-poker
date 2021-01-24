@@ -78,7 +78,7 @@ export class WebSocketService implements OnDestroy {
    * @param msg - the recieved message
    */
   handleMessage(msg: any): void {
-    if (!this.isRegistered) {
+    if (!this.isRegistered && msg.action === 'register') {
       if (msg.error) {
         localStorage.removeItem('name');
         this.lastError = msg.error;
