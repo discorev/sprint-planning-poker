@@ -1,4 +1,5 @@
-const WebSocket = require('ws');
+import "jasmine";
+import WebSocket = require('ws');
 
 const websocketServerAddress = 'ws://localhost:8080';
 
@@ -7,8 +8,8 @@ describe("WebSocket Server", function () {
 
   beforeEach(function (done) {
     // ensure the websocket restarts by deleting the previous import cache
-    delete require.cache[require.resolve('../index')];
-    webSocketServer = require('../index');
+    delete require.cache[require.resolve('../src/index')];
+    webSocketServer = require('../src/index');
     webSocketServer.on('listening', done);
   });
 
@@ -23,7 +24,7 @@ describe("WebSocket Server", function () {
 
   it("should return an error if the user has not registered", function(done) {
     const ws = new WebSocket(websocketServerAddress);
-    ws.on('message', function incoming(data) {
+    ws.on('message', function incoming(data: string) {
       expect(JSON.parse(data)).toEqual({error: "not registered"});
       ws.close();
       done();
@@ -37,7 +38,7 @@ describe("WebSocket Server", function () {
   describe('When registering a player', function() {
     it("should not allow a single character name", function(done) {
       const ws = new WebSocket(websocketServerAddress);
-      ws.on('message', function incoming(data) {
+      ws.on('message', function incoming(data: string) {
         expect(JSON.parse(data)).toEqual({action: "register", error: "name is too short"});
         ws.close();
         done();
@@ -50,7 +51,7 @@ describe("WebSocket Server", function () {
 
     it("should not allow a two character name", function(done) {
       const ws = new WebSocket(websocketServerAddress);
-      ws.on('message', function incoming(data) {
+      ws.on('message', function incoming(data: string) {
         expect(JSON.parse(data)).toEqual({action: "register", error: "name is too short"});
         ws.close();
         done();
@@ -63,8 +64,11 @@ describe("WebSocket Server", function () {
 
     it("should allow a three character name", function(done) {
       const ws = new WebSocket(websocketServerAddress);
-      ws.on('message', function incoming(data) {
-        expect(JSON.parse(data)).toEqual({error: null, players: ['aaa'], reset: true});
+      ws.on('message', function incoming(data: string) {
+        expect(JSON.parse(data)).toEqual({
+          action: 'register',
+          players: [jasmine.objectContaining({name: 'aaa', choice: null, snoozed: false})],
+          reset: true});
         ws.close();
         done();
       });
@@ -75,12 +79,14 @@ describe("WebSocket Server", function () {
     });
 
     it("should error if two players try to use the same name", function(done) {
+      const expectedPlayers = [jasmine.objectContaining({name: 'bbb', choice: null, snoozed: false})]
+
       const ws1 = new WebSocket(websocketServerAddress);
       const ws2 = new WebSocket(websocketServerAddress);
       let count = 0;
-      ws2.on('message', function incoming(data) {
+      ws2.on('message', function incoming(data: string) {
         if (count === 0) {
-          expect(JSON.parse(data)).toEqual({players: ['bbb'], reset: true}, 'Did not recieve register for player 1');
+          expect(JSON.parse(data)).toEqual({players: expectedPlayers, reset: true}, 'Did not recieve register for player 1');
         } else if (count === 1) {
           expect(JSON.parse(data)).toEqual({action: "register", error: "name is already taken"}, 'expect an error from player 2');
         }
@@ -92,9 +98,9 @@ describe("WebSocket Server", function () {
         }
       });
   
-      ws1.on('message', function incoming(data) {
-        expect(JSON.parse(data)).toEqual({error: null, players: ['bbb'], reset: true});
-        registered = true;
+      ws1.on('message', function incoming(data: string) {
+        expect(JSON.parse(data)).toEqual({action: 'register', players: expectedPlayers, reset: true});
+        // registered = true;
         ws2.send('{"action": "register", "name": "bbb"}');
       });
   
@@ -140,9 +146,9 @@ describe("WebSocket Server", function () {
     it("should reveal the choice as soon as it's made", function(done) {
       const ws = new WebSocket(websocketServerAddress);
       let count = 0;
-      ws.on('message', function incoming(data) {
+      ws.on('message', function incoming(data: string) {
         if (count === 0) {
-          expect(JSON.parse(data)).toEqual({error: null, players: ['ccc'], reset: true});
+          expect(JSON.parse(data)).toEqual({action: 'register', players: [jasmine.objectContaining({name: 'ccc', snoozed: false, choice: null})], reset: true});
         } else if (count === 1) {
           expect(JSON.parse(data)).toEqual({choices: [{name: 'ccc', choice: '?', snoozed: false}]});
         }
@@ -166,7 +172,8 @@ describe("WebSocket Server", function () {
       messageCallback.and.callFake((data) => {
         const countCalls = messageCallback.calls.count();
         if (countCalls === 1) {
-          expect(JSON.parse(data)).toEqual({error: null, players: ['ccc'], reset: true});
+          expect(JSON.parse(data)).toEqual({action: 'register', players: [
+            jasmine.objectContaining({name: 'ccc', choice: null, snoozed: false})], reset: true});
         }
         if (countCalls === 2) {
           expect(JSON.parse(data)).toEqual({choices: [{name: 'ccc', choice: '?', snoozed: false}]});
@@ -197,7 +204,8 @@ describe("WebSocket Server", function () {
       messageCallback.and.callFake((data) => {
         const countCalls = messageCallback.calls.count();
         if (countCalls === 1) {
-          expect(JSON.parse(data)).toEqual({error: null, players: ['ccc'], reset: true});
+          expect(JSON.parse(data)).toEqual({action: 'register', players: [
+            jasmine.objectContaining({name: 'ccc', choice: null, snoozed: false})], reset: true});
           ws.send(JSON.stringify({action: "snooze", player: "aaa"}));
         }
         if (countCalls === 2) {
@@ -222,7 +230,8 @@ describe("WebSocket Server", function () {
       messageCallback.and.callFake((data) => {
         const countCalls = messageCallback.calls.count();
         if (countCalls === 1) {
-          expect(JSON.parse(data)).toEqual({error: null, players: ['ccc'], reset: true});
+          expect(JSON.parse(data)).toEqual({action: 'register', players: [
+            jasmine.objectContaining({name: 'ccc', choice: null, snoozed: false})], reset: true});
           ws.send(JSON.stringify({action: "snooze", player: "ccc"}));
         }
         if (countCalls === 2) {
@@ -324,7 +333,7 @@ describe("WebSocket Server", function () {
       ws2.on('message', function(data) {
         data = JSON.parse(data);
         if (data.players) {
-          expect(data).toEqual({players: ['player2'], reset: true});
+          expect(data).toEqual({players: [jasmine.objectContaining({name: 'player2', choice: null, snoozed: false})], reset: true});
           done();
         }
       });
