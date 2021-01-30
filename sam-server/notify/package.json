@@ -1,0 +1,11 @@
+{
+  "name": "notify",
+  "version": "1.0.0",
+  "description": "Notification handler for WebSockets on API Gateway",
+  "main": "src/app.js",
+  "license": "BSD-3-Clause",
+  "dependencies": { },
+  "devDependencies": {
+    "aws-sdk": "^2.739.0"
+  }
+}

@@ -80,6 +80,22 @@ Resources:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RegisterMessageFunction.Arn}/invocations
 
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - ConnectRoute
+    - RegisterRoute
+    - DisconnectRoute
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      DeploymentId: !Ref Deployment
+      ApiId: !Ref PlanningPokerWebSocket
+
   ConnectionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -89,11 +105,12 @@ Resources:
       KeySchema:
       - AttributeName: "connectionId"
         KeyType: "HASH"
+      SSESpecification:
+        SSEEnabled: True
+      # BillingMode: 'PAY_PER_REQUEST'
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      SSESpecification:
-        SSEEnabled: True
       TableName: !Ref TableName
 
   OnConnectFunction:
@@ -139,6 +156,10 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref OnDisconnectFunction
       Principal: apigateway.amazonaws.com
+
+  NotifyTopic:
+    Type: AWS::SNS::Topic
+
   RegisterMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -149,16 +170,23 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
+          NOTIFY_TOPIC: !Ref NotifyTopic
       Policies:
       - DynamoDBCrudPolicy:
           TableName: !Ref TableName
       - Statement:
         - Effect: Allow
           Action:
-          - 'execute-api:ManageConnections'
+            - 'execute-api:ManageConnections'
           Resource:
-          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
-  SendMessagePermission:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+        - Effect: Allow
+          Action:
+            - 'sns:Publish'
+          Resource:
+            - !Ref NotifyTopic
+
+  RegisterMessagePermission:
     Type: AWS::Lambda::Permission
     DependsOn:
       - PlanningPokerWebSocket
@@ -166,3 +194,33 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref RegisterMessageFunction
       Principal: apigateway.amazonaws.com
+
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: notify/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref NotifyTopic
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
+      - Statement:
+        - Effect: Allow
+          Action:
+            - 'execute-api:ManageConnections'
+          Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+        - Effect: Allow
+          Action:
+            - 'sns:Publish'
+          Resource:
+            - !Ref NotifyTopic
