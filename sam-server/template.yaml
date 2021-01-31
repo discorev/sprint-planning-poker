@@ -79,13 +79,34 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RegisterMessageFunction.Arn}/invocations
+  SnoozeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      RouteKey: snooze
+      AuthorizationType: NONE
+      OperationName: SnoozeRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref SnoozeInteg
+  SnoozeInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      Description: Snooze Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SnoozeMessageFunction.Arn}/invocations
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
-    - ConnectRoute
-    - RegisterRoute
-    - DisconnectRoute
+      - ConnectRoute
+      - RegisterRoute
+      - DisconnectRoute
+      - SnoozeRoute
     Properties:
       ApiId: !Ref PlanningPokerWebSocket
   Stage:
@@ -100,11 +121,11 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-      - AttributeName: "connectionId"
-        AttributeType: "S"
+        - AttributeName: "connectionId"
+          AttributeType: "S"
       KeySchema:
-      - AttributeName: "connectionId"
-        KeyType: "HASH"
+        - AttributeName: "connectionId"
+          KeyType: "HASH"
       SSESpecification:
         SSEEnabled: True
       # BillingMode: 'PAY_PER_REQUEST'
@@ -185,7 +206,6 @@ Resources:
             - 'sns:Publish'
           Resource:
             - !Ref NotifyTopic
-
   RegisterMessagePermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -193,6 +213,40 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref RegisterMessageFunction
+      Principal: apigateway.amazonaws.com
+
+  SnoozeMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: snooze/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+          NOTIFY_TOPIC: !Ref NotifyTopic
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
+      - Statement:
+        - Effect: Allow
+          Action:
+            - 'execute-api:ManageConnections'
+          Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+        - Effect: Allow
+          Action:
+            - 'sns:Publish'
+          Resource:
+            - !Ref NotifyTopic
+  SnoozeMessagePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PlanningPokerWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SnoozeMessageFunction
       Principal: apigateway.amazonaws.com
 
   NotifyFunction:
