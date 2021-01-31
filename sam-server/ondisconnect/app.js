@@ -19,23 +19,26 @@ exports.handler = async event => {
         connectionId: event.requestContext.connectionId
       }
     }).promise();
-
-    await ddb.delete({
+    
+    if (connectionData.Item.playerName) {
+      await ddb.delete({
         TableName: process.env.TABLE_NAME,
         Key: {
           connectionId: 'playerName#' + connectionData.Item.playerName
         }
+      }).promise();
+    }
+    
+    await ddb.delete({
+      TableName: process.env.TABLE_NAME,
+      Key: {
+        connectionId: event.requestContext.connectionId
+      }
     }).promise();
 
-    await ddb.delete({
-        TableName: process.env.TABLE_NAME,
-        Key: {
-          connectionId: event.requestContext.connectionId
-        }
-    }).promise();
   } catch (err) {
     return { statusCode: 500, body: 'Failed to disconnect: ' + JSON.stringify(err) };
   }
-
+  
   return { statusCode: 200, body: 'Disconnected.' };
 };
