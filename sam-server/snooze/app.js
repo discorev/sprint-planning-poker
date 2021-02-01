@@ -38,16 +38,19 @@ exports.handler = async event => {
     return { statusCode: 404, body: 'Player not found' }
   }
 
-  console.log(connectionData.Items[0]);
+  const playerData = connectionData.Items[0];
+  console.log(playerData);
+
+  playerData.snoozed = !playerData.snoozed;
 
   await ddb.update({
     TableName: process.env.TABLE_NAME,
     Key: {
-      connectionId: connectionData.Items[0].connectionId
+      connectionId: playerData.connectionId
     },
     UpdateExpression: 'set snoozed = :sn',
     ExpressionAttributeValues: {
-      ':sn': !connectionData.Items[0].snoozed
+      ':sn': playerData.snoozed
     }
   }).promise();
 
@@ -58,6 +61,14 @@ exports.handler = async event => {
       api: {
         DataType: 'String',
         StringValue: event.requestContext.domainName + '/' + event.requestContext.stage
+      },
+      update: {
+        DataType: 'String',
+        StringValue: JSON.stringify({
+          action: 'snooze',
+          player: playerData.playerName,
+          snoozed: playerData.snoozed
+        })
       }
     }
   }).promise();
