@@ -79,6 +79,26 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RegisterMessageFunction.Arn}/invocations
+  RecordChoiceRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      RouteKey: 'record-choice'
+      AuthorizationType: NONE
+      OperationName: RecordChoiceRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref RecordChoiceInteg
+  RecordChoiceInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      Description: Record Choice Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RecordChoiceMessageFunction.Arn}/invocations
   SnoozeRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -106,6 +126,7 @@ Resources:
       - ConnectRoute
       - RegisterRoute
       - DisconnectRoute
+      - RecordChoiceRoute
       - SnoozeRoute
     Properties:
       ApiId: !Ref PlanningPokerWebSocket
@@ -213,6 +234,40 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref RegisterMessageFunction
+      Principal: apigateway.amazonaws.com
+
+  RecordChoiceMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: record-choice/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+          NOTIFY_TOPIC: !Ref NotifyTopic
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
+      - Statement:
+        - Effect: Allow
+          Action:
+            - 'execute-api:ManageConnections'
+          Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+        - Effect: Allow
+          Action:
+            - 'sns:Publish'
+          Resource:
+            - !Ref NotifyTopic
+  RecordChoiceMessagePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PlanningPokerWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RecordChoiceMessageFunction
       Principal: apigateway.amazonaws.com
 
   SnoozeMessageFunction:
