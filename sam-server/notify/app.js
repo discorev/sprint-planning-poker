@@ -91,9 +91,31 @@ exports.handler = async event => {
 
     case 'SNOOZED':
     case 'SELECTED':
+      let updateResponse = snsPayload.MessageAttributes.update.Value;
+
+      // Check that at least one player has made a choice
+      // If they have then check if every player has made a choice or is snoozed
+      // If they have, return the choices rather than the update
+      if (
+        validConnections.some(record => record.choice !== null) &&
+        validConnections.every(record => (record.choice !== null || record.snoozed))
+      ) {
+        const choiceData = validConnections.map(record => {
+          return {
+            name: record.playerName,
+            choice: record.choice,
+            snoozed: record.snoozed
+          }
+        });
+        updateResponse = JSON.stringify({ choices: choiceData });
+      }
+
       // Check if all players are snoozed or have chosen to reveal choices.
       const sendChoiceUpdate = validConnections.map(async (record) => {
-        await apigwManagementApi.postToConnection({ ConnectionId: record.connectionId, Data: message }).promise();
+        await apigwManagementApi.postToConnection({
+          ConnectionId: record.connectionId,
+          Data: updateResponse
+        }).promise();
       });
 
       await Promise.all(sendChoiceUpdate);
