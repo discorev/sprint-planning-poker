@@ -119,6 +119,26 @@ Resources:
       IntegrationUri: 
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SnoozeMessageFunction.Arn}/invocations
+  ResetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      RouteKey: reset
+      AuthorizationType: NONE
+      OperationName: ResetRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ResetInteg
+  ResetInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref PlanningPokerWebSocket
+      Description: Reset Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResetMessageFunction.Arn}/invocations
 
   Deployment:
     Type: AWS::ApiGatewayV2::Deployment
@@ -128,6 +148,7 @@ Resources:
       - DisconnectRoute
       - RecordChoiceRoute
       - SnoozeRoute
+      - ResetRoute
     Properties:
       ApiId: !Ref PlanningPokerWebSocket
   Stage:
@@ -187,9 +208,21 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref TableName
+          NOTIFY_TOPIC: !Ref NotifyTopic
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TableName
+        - Statement:
+          - Effect: Allow
+            Action:
+              - 'execute-api:ManageConnections'
+            Resource:
+              - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+          - Effect: Allow
+            Action:
+              - 'sns:Publish'
+            Resource:
+              - !Ref NotifyTopic
   OnDisconnectPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -302,6 +335,34 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SnoozeMessageFunction
+      Principal: apigateway.amazonaws.com
+
+  ResetMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: reset/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: !Ref TableName
+      - Statement:
+        - Effect: Allow
+          Action:
+            - 'execute-api:ManageConnections'
+          Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PlanningPokerWebSocket}/*'
+  ResetMessagePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PlanningPokerWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ResetMessageFunction
       Principal: apigateway.amazonaws.com
 
   NotifyFunction:
