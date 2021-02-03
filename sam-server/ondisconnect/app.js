@@ -1,15 +1,7 @@
-// Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
-
-// https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api-route-keys-connect-disconnect.html
-// The $disconnect route is executed after the connection is closed.
-// The connection can be closed by the server or by the client. As the connection is already closed when it is executed, 
-// $disconnect is a best-effort event. 
-// API Gateway will try its best to deliver the $disconnect event to your integration, but it cannot guarantee delivery.
-
 const AWS = require('aws-sdk');
 
 const ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: process.env.AWS_REGION });
+const sns = new AWS.SNS({apiVersion: '2010-03-31', region: process.env.AWS_REGION });
 
 exports.handler = async event => {
   try {
@@ -20,6 +12,13 @@ exports.handler = async event => {
       }
     }).promise();
     
+    await ddb.delete({
+      TableName: process.env.TABLE_NAME,
+      Key: {
+        connectionId: event.requestContext.connectionId
+      }
+    }).promise();
+
     if (connectionData.Item.playerName) {
       await ddb.delete({
         TableName: process.env.TABLE_NAME,
@@ -27,14 +26,19 @@ exports.handler = async event => {
           connectionId: 'playerName#' + connectionData.Item.playerName
         }
       }).promise();
+
+      // Post a register message to SNS to send out an updated player list
+      await sns.publish({
+        TopicArn: process.env.NOTIFY_TOPIC,
+        Message: 'REGISTER',
+        MessageAttributes: {
+          api: {
+            DataType: 'String',
+            StringValue: event.requestContext.domainName + '/' + event.requestContext.stage
+          }
+        }
+      }).promise();
     }
-    
-    await ddb.delete({
-      TableName: process.env.TABLE_NAME,
-      Key: {
-        connectionId: event.requestContext.connectionId
-      }
-    }).promise();
 
   } catch (err) {
     return { statusCode: 500, body: 'Failed to disconnect: ' + JSON.stringify(err) };
