@@ -66,7 +66,7 @@ exports.handler = async event => {
         DataType: 'String',
         StringValue: JSON.stringify({
           action: 'snooze',
-          player: playerData.playerName,
+          player: postData.player,
           snoozed: playerData.snoozed
         })
       }
