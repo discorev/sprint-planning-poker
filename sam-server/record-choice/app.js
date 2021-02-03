@@ -30,6 +30,10 @@ exports.handler = async event => {
     record => record.connectionId === event.requestContext.connectionId
     );
     
+    let choice = null;
+    if (postData.hasOwnProperty('choice')) {
+      choice = postData.choice;
+    }
     // Update the players choice in the database
     const result = await ddb.update({
       TableName: process.env.TABLE_NAME,
@@ -39,7 +43,7 @@ exports.handler = async event => {
       UpdateExpression: 'set snoozed = :sn, choice = :ch',
       ExpressionAttributeValues: {
         ':sn': false,
-        ':ch': postData.choice
+        ':ch': choice
       }
     }).promise();
     
@@ -48,7 +52,7 @@ exports.handler = async event => {
     // This needs to be sent to all players
     let playerChoice = JSON.stringify({
       name: currentPlayer.playerName,
-      selected: (postData.choice != null)
+      selected: (choice != null)
     });
     
     await sns.publish({
