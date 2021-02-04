@@ -43,6 +43,10 @@ exports.handler = async event => {
         api: {
           DataType: 'String',
           StringValue: event.requestContext.domainName + '/' + event.requestContext.stage
+        },
+        connectionId: {
+          DataType: 'String',
+          StringValue: event.requestContext.connectionId
         }
       }
     }).promise();

@@ -62,6 +62,10 @@ exports.handler = async event => {
   switch(message) {
     case 'REGISTER':
     case 'RESET':
+      let connectionId = null
+      if (snsPayload.MessageAttributes.hasOwnProperty('connectionId')) {
+        connectionId = snsPayload.MessageAttributes.connectionId.Value;
+      }
       console.log('Resetting choices and sending player list');
       // Reset all players choices and send the message
       const resetPromises = validConnections.filter(record => record.choice !== null).map(async (record) => {
@@ -83,7 +87,13 @@ exports.handler = async event => {
       const response = JSON.stringify({ players: playerData, reset: true });
 
       const sendPlayerListPromises = validConnections.map(async (record) => {
-        await apigwManagementApi.postToConnection({ ConnectionId: record.connectionId, Data: response }).promise();
+        if (connectionId === record.connectionId) {
+          return await apigwManagementApi.postToConnection({
+            ConnectionId: record.connectionId,
+            Data: JSON.stringify({ action: 'register', players: playerData, reset: true })
+          }).promise();
+        }
+        return await apigwManagementApi.postToConnection({ ConnectionId: record.connectionId, Data: response }).promise();
       });
 
       await Promise.all(resetPromises.concat(sendPlayerListPromises));
