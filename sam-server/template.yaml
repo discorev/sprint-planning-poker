@@ -36,7 +36,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Connect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
   DisconnectRoute:
@@ -56,7 +56,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Disconnect Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
   RegisterRoute:
@@ -76,7 +76,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Register Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RegisterMessageFunction.Arn}/invocations
   RecordChoiceRoute:
@@ -96,7 +96,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Record Choice Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RecordChoiceMessageFunction.Arn}/invocations
   SnoozeRoute:
@@ -116,7 +116,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Snooze Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SnoozeMessageFunction.Arn}/invocations
   ResetRoute:
@@ -136,7 +136,7 @@ Resources:
       ApiId: !Ref PlanningPokerWebSocket
       Description: Reset Integration
       IntegrationType: AWS_PROXY
-      IntegrationUri: 
+      IntegrationUri:
         Fn::Sub:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResetMessageFunction.Arn}/invocations
 
@@ -194,7 +194,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref OnConnectFunction
       Principal: apigateway.amazonaws.com
-  
+
   OnDisconnectFunction:
     Type: AWS::Serverless::Function
     Properties:
