@@ -5,7 +5,8 @@
       Your Choice
     </div>
     <div class="card-body">
-      <app-cards [(selection)]="selection" [disabled]="showReset" (selectionChange)="selectionChanged($event)"></app-cards>
+      <app-cards [(selection)]="selection" [disabled]="showReset" (selectionChange)="selectionChanged($event)">
+      </app-cards>
     </div>
   </div>
 
@@ -14,8 +15,10 @@
       <div class="card player-choice"
            [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
         <div class="card-body text-center">
-          <span class="btn-snooze" [ngClass]="{'text-muted': !card.snoozed}">
-            <a href="#" (click)="snoozePlayer(card); $event.preventDefault()" class="text-reset"><i class="far fa-snooze"></i></a>
+          <span class="btn-snooze" [ngClass]="{'text-subtle': !card.snoozed}">
+            <a href="#" (click)="snoozePlayer(card); $event.preventDefault()" class="text-reset">
+              <i [ngClass]="{'fal': !card.snoozed, 'far': card.snoozed}" class="fa-snooze"></i>
+            </a>
           </span>
           <h5 class="card-title">{{card.name}}</h5>
           <p class="card-text">{{card.choice || "&nbsp;"}}</p>
@@ -34,7 +37,8 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="connectingModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="modelLabel" aria-hidden="true">
+<div class="modal fade" id="connectingModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+     aria-labelledby="modelLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-body">
