@@ -249,7 +249,7 @@ describe('AppComponent', () => {
     app.registered = true;
     fixture.detectChanges();
     const snoozeSpan: DebugElement = fixture.debugElement.query(By.css('.btn-snooze'));
-    expect(snoozeSpan.nativeElement.classList.contains('text-muted')).toBeTrue();
+    expect(snoozeSpan.nativeElement.classList.contains('text-subtle')).toBeTrue();
 
     const sendSpy = webSocketServiceSpy.send;
     const snoozeLink: HTMLElement = snoozeSpan.query(By.css('a')).nativeElement;
