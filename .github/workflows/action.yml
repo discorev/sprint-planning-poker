@@ -1,0 +1,34 @@
+name: build
+on:
+  - push
+  - pull_request
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - name: setup fontawesome
+        run: |
+          npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+          npm config set "//npm.fontawesome.com/:_authToken" $FONTAWESOME_NPM_TOKEN
+      - name: install & test
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm test
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - name: install & test
+        working-directory: ./node-server
+        run: |
+          npm install
+          npm test
