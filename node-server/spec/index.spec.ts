@@ -1,16 +1,16 @@
 import "jasmine";
-import WebSocket = require('ws');
+import WebSocket from 'ws';
 
 const websocketServerAddress = 'ws://localhost:8080';
 
 describe("WebSocket Server", function () {
-  var webSocketServer;
+  var webSocketServer: WebSocket.Server | null;
 
   beforeEach(function (done) {
     // ensure the websocket restarts by deleting the previous import cache
     delete require.cache[require.resolve('../src/index')];
     webSocketServer = require('../src/index');
-    webSocketServer.on('listening', done);
+    webSocketServer?.on('listening', done);
   });
 
   afterEach(function (done) {
@@ -103,10 +103,21 @@ describe("WebSocket Server", function () {
         // registered = true;
         ws2.send('{"action": "register", "name": "bbb"}');
       });
-  
+
+      let firstSent = false
       ws1.on('open', () => {
-        ws1.send('{"action": "register", "name": "bbb"}');
-      });
+        if (ws2.readyState === WebSocket.OPEN && !firstSent) {
+          firstSent = true
+          ws1.send('{"action": "register", "name": "bbb"}')
+        }
+      })
+
+      ws2.on('open', () => {
+        if (ws1.readyState === WebSocket.OPEN && !firstSent) {
+          firstSent = true
+          ws1.send('{"action": "register", "name": "bbb"}')
+        }
+      })
     });
   });
 
@@ -261,43 +272,52 @@ describe("WebSocket Server", function () {
   });
 
   describe('when there are two players', function() {
-    var ws1;
-    var ws2;
+    var ws1: WebSocket;
+    var ws2: WebSocket;
 
     beforeEach(function (done) {
       ws1 = new WebSocket(websocketServerAddress);
       ws2 = new WebSocket(websocketServerAddress);
       let countPlayer1 = 0;
       let countPlayer2 = 0;
-      ws1.on('message', function incoming(data) {
-        data = JSON.parse(data);
+
+      const waitForTwoPlayersSocket1 = (incoming: string) => {
+        const data = JSON.parse(incoming)
         if (data.error === null && data.players) {
           countPlayer1 += 1;
         } else if (data.players && data.reset) {
           countPlayer1 += 1;
         }
-        if (countPlayer1 === 2 && countPlayer2 === 2) {
+        if (countPlayer1 >= 2 && countPlayer2 >= 2) {
+          ws1.removeAllListeners()
+          ws2.removeAllListeners()
           done();
         }
-      });
-      ws2.on('message', function incoming(data) {
-        data = JSON.parse(data);
+      }
+
+      const waitForTwoPlayersSocket2 = (incoming: string) => {
+        const data = JSON.parse(incoming)
         if (data.error === null && data.players) {
           countPlayer2 += 1;
         } else if (data.players && data.reset) {
           countPlayer2 += 1;
         }
-        if (countPlayer1 === 2 && countPlayer2 === 2) {
+        if (countPlayer1 >= 2 && countPlayer2 >= 2) {
+          ws1.removeAllListeners()
+          ws2.removeAllListeners()
           done();
         }
-      });
+      }
+      
+      ws1.on('message', waitForTwoPlayersSocket1);
+      ws2.on('message', waitForTwoPlayersSocket2);
 
       ws1.on('open', function() {
         ws1.send(JSON.stringify({action: "register", name: "player1"}));
-      });
+      })
       ws2.on('open', function() {
         ws2.send(JSON.stringify({action: "register", name: "player2"}));
-      });
+      })
     });
 
     afterEach(function(done) {
@@ -310,14 +330,14 @@ describe("WebSocket Server", function () {
         }
       }
 
-      if (ws1.readyState === 1) {
+      if (ws1.readyState === WebSocket.OPEN) {
         ws1.on('close', closeConnection);
         ws1.close();
       } else {
         finalTotal -= 1;
       }
 
-      if (ws2.readyState === 1) {
+      if (ws2.readyState === WebSocket.OPEN) {
         ws2.on('close', closeConnection);
         ws2.close();
       } else {
@@ -330,19 +350,24 @@ describe("WebSocket Server", function () {
     });
 
     it('should send a message when a player disconnects', function(done) {
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.players) {
           expect(data).toEqual({players: [jasmine.objectContaining({name: 'player2', choice: null, snoozed: false})], reset: true});
           done();
         }
       });
-      ws1.close();
+      if (ws2.readyState === WebSocket.OPEN && ws1.readyState === WebSocket.OPEN) {
+        ws1.close();
+      } else {
+          throw new Error('NOT READY? WS1: ' + ws1.readyState.toString() + ' WS2: ' + ws2.readyState.toString());
+      }
+      
     });
 
     it('should send that a player has made a choice to the other players but not reveal it', function(done) {
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.name) {
           expect(data).toEqual({name: 'player1', selected: true});
           done();
@@ -353,8 +378,8 @@ describe("WebSocket Server", function () {
 
     it('should send an update when the player changes their mind showing they have deselected', function(done) {
       let count = 0;
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.name) {
           if (count === 0) {
             expect(data).toEqual({name: 'player1', selected: true}, 'Player 1 has made a choice');
@@ -373,8 +398,8 @@ describe("WebSocket Server", function () {
     });
 
     it('should reveal the choices once both players have made them', function(done) {
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.choices) {
           expect(data).toEqual({choices: jasmine.arrayWithExactContents([
             { name: 'player1', choice: '2', snoozed: false },
@@ -383,8 +408,9 @@ describe("WebSocket Server", function () {
           done();
         }
       });
-      ws1.send(JSON.stringify({action: 'record-choice', choice: '2'}));
-      ws2.send(JSON.stringify({action: 'record-choice', choice: '1'}));
+
+      ws1.send(JSON.stringify({action: 'record-choice', choice: '2'}))
+      ws2.send(JSON.stringify({action: 'record-choice', choice: '1'}))
     });
 
     it('should allow a player1 to snooze player2', function(done) {
@@ -420,8 +446,8 @@ describe("WebSocket Server", function () {
     });
 
     it('should reveal the choices if one of the two players has been snoozed and the other makes a choice', function(done) {
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.choices) {
           expect(data).toEqual({choices: jasmine.arrayWithExactContents([
             { name: 'player1', choice: '1', snoozed: false },
@@ -435,8 +461,8 @@ describe("WebSocket Server", function () {
     });
 
     it('should reveal the choices if one of the two players has made a choice and the other is snoozed', function(done) {
-      ws2.on('message', function(data) {
-        data = JSON.parse(data);
+      ws2.on('message', function(msg: string) {
+        const data = JSON.parse(msg);
         if (data.choices) {
           expect(data).toEqual({choices: jasmine.arrayWithExactContents([
             { name: 'player1', choice: '1', snoozed: false },
