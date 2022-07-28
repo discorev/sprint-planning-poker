@@ -23,7 +23,8 @@ export class WebSocketService implements OnDestroy {
   constructor(private webSocketClient: WebSocketClientService) {
     webSocketClient.onOpen$.subscribe(event => this.openSubject$.next(event));
     webSocketClient.onClose$.subscribe(event => this.closeSubject$.next(event));
-    this.socket$ = this.webSocketClient.connect(environment.websocket_api);
+    const websocket_api_url = (window.location.protocol === "https:") ? "wss://" : "ws://" + window.location.host + environment.websocket_api
+    this.socket$ = this.webSocketClient.connect(websocket_api_url);
     this.socket$.pipe(
       retryWhen(errors => errors.pipe(
         tap(err => {
