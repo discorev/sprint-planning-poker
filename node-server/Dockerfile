@@ -1,13 +1,14 @@
-FROM node:alpine as builder
+FROM node:lts-alpine as builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:alpine
+FROM node:lts-alpine
 WORKDIR /app
 COPY ./package.json ./package-lock.json ./
-RUN npm install --production
+RUN npm ci --only=production
 COPY --from=builder /app/dist .
-CMD ["npm", "run", "start"]
+EXPOSE 8080
+CMD ["node", "index.js"]
