@@ -280,32 +280,40 @@ describe("WebSocket Server", function () {
       ws2 = new WebSocket(websocketServerAddress);
       let countPlayer1 = 0;
       let countPlayer2 = 0;
+      let isDone = false
 
       const waitForTwoPlayersSocket1 = (incoming: string) => {
         const data = JSON.parse(incoming)
-        if (data.error === null && data.players) {
-          countPlayer1 += 1;
-        } else if (data.players && data.reset) {
-          countPlayer1 += 1;
+        // Check if this is the message back from registering player1
+        if (Object.prototype.hasOwnProperty.call(data, "action") && Object.prototype.hasOwnProperty.call(data, "players")) {
+          countPlayer1 += 1
+        } else if (Object.prototype.hasOwnProperty.call(data, "players") && Object.prototype.hasOwnProperty.call(data, "reset")) {
+          countPlayer1 += 1
         }
         if (countPlayer1 >= 2 && countPlayer2 >= 2) {
           ws1.removeAllListeners()
           ws2.removeAllListeners()
-          done();
+          if (!isDone) {
+            done()
+            isDone = true
+          }
         }
       }
 
       const waitForTwoPlayersSocket2 = (incoming: string) => {
         const data = JSON.parse(incoming)
-        if (data.error === null && data.players) {
-          countPlayer2 += 1;
-        } else if (data.players && data.reset) {
-          countPlayer2 += 1;
+        if (Object.prototype.hasOwnProperty.call(data, "action") && Object.prototype.hasOwnProperty.call(data, "players")) {
+          countPlayer2 += 1
+        } else if (Object.prototype.hasOwnProperty.call(data, "players") && Object.prototype.hasOwnProperty.call(data, "reset")) {
+          countPlayer2 += 1
         }
         if (countPlayer1 >= 2 && countPlayer2 >= 2) {
           ws1.removeAllListeners()
           ws2.removeAllListeners()
-          done();
+          if (!isDone) {
+            done()
+            isDone = true
+          }
         }
       }
       
@@ -380,17 +388,19 @@ describe("WebSocket Server", function () {
       let count = 0;
       ws2.on('message', function(msg: string) {
         const data = JSON.parse(msg);
+        console.log(data, count)
         if (data.name) {
           if (count === 0) {
             expect(data).toEqual({name: 'player1', selected: true}, 'Player 1 has made a choice');
+            count += 1;
             // Then send an update to ensure it's marked as no-longer selected
             ws1.send(JSON.stringify({action: 'record-choice', choice: undefined}));
+            return
           }
           if (count === 1) {
             expect(data).toEqual({name: 'player1', selected: false}, 'Player 1 has unmade their choice');
             done();
           }
-          count += 1;
         }
       });
       // First send an update to ensure it's marked as selected

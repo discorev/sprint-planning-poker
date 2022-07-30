@@ -15,11 +15,11 @@ export function isRegisterAction(action: Action): action is RegisterAction {
 }
 
 interface RecordChoiceAction extends Action {
-    choice: string
+    choice?: string
 }
 
 export function isRecordChoiceAction(action: Action): action is RecordChoiceAction {
-    return action.action === "record-choice" && Object.prototype.hasOwnProperty.call(action, 'choice')
+    return action.action === "record-choice"
 }
 
 interface SnoozeAction extends Action {
