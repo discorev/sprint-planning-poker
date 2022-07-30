@@ -383,6 +383,8 @@ describe("WebSocket Server", function () {
         if (data.name) {
           if (count === 0) {
             expect(data).toEqual({name: 'player1', selected: true}, 'Player 1 has made a choice');
+            // Then send an update to ensure it's marked as no-longer selected
+            ws1.send(JSON.stringify({action: 'record-choice', choice: undefined}));
           }
           if (count === 1) {
             expect(data).toEqual({name: 'player1', selected: false}, 'Player 1 has unmade their choice');
@@ -393,8 +395,6 @@ describe("WebSocket Server", function () {
       });
       // First send an update to ensure it's marked as selected
       ws1.send(JSON.stringify({action: 'record-choice', choice: '2'}));
-      // Then send an update to ensure it's marked as no-longer selected
-      ws1.send(JSON.stringify({action: 'record-choice', choice: undefined}));
     });
 
     it('should reveal the choices once both players have made them', function(done) {
