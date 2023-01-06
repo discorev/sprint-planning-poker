@@ -1,4 +1,4 @@
-apiVersion: skaffold/v2beta28
+apiVersion: skaffold/v4beta1
 kind: Config
 metadata:
   name: sprint-planning-poker
@@ -9,8 +9,9 @@ build:
     docker:
       dockerfile: Dockerfile.dev
     sync:
-      infer:
-        - '**/*.ts'
+      manual:
+        - src: 'src/**/*.*'
+          dest: .
   - image: discorev/sprint-planning-poker-website
     context: frontend
     docker:
@@ -18,12 +19,13 @@ build:
       buildArgs:
         FONTAWESOME_NPM_TOKEN: "{{ .FONTAWESOME_NPM_TOKEN }}"
     sync:
-      infer:
-        - '**/*.ts'
-        - '**/*.html'
-        - '**/*.scss'
-deploy:
-  kubectl:
-    manifests:
-    - k8s/frontend.yaml
-    - k8s/server.yaml
+      manual:
+        - src: 'src/**/*.*'
+          dest: .
+manifests:
+  rawYaml:
+  - k8s/namespace.yaml
+  - k8s/redis.yaml
+  - k8s/frontend.yaml
+  - k8s/ingress.yaml
+  - k8s/server.yaml
