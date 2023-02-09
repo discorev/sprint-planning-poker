@@ -1,0 +1,18 @@
+<div class="card player-choice border" [ngClass]="{'selected': data.selected === true}">
+  <div class="card-body text-center">
+    <span *ngIf="!data.observer" class="btn-snooze" [ngClass]="{'text-subtle': !data.snoozed}">
+      <span class="sr-only">{{data.snoozed ? "snoozed" : "active"}} player</span>
+      <a role="button" (click)="snoozeClicked.emit(!data.snoozed); $event.preventDefault()" class="text-reset">
+        <i aria-hidden="true" [ngClass]="{'fal': !data.snoozed, 'far': data.snoozed}" class="fa-snooze"></i>
+        <span class="sr-only">Click to {{data.snoozed ? "un-snooze" : "snooze"}} player {{data.name}}</span>
+      </a>
+    </span>
+
+    <span *ngIf="data.observer" class="observer">
+      <i aria-hidden="true" class="fa-regular fa-eyes" title="observer"></i>
+      <span class="sr-only">observer</span>
+    </span>
+    <h5 class="card-title">{{data.name}}</h5>
+    <p class="card-text">{{data.choice || "&nbsp;"}}</p>
+  </div>
+</div>

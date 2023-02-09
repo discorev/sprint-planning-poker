@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { WebSocketService } from '@app/services/web-socket.service';
 import { takeUntil } from 'rxjs/operators';
@@ -10,14 +10,21 @@ import { takeUntil } from 'rxjs/operators';
 export class RegisterComponent implements OnDestroy {
 
   error = '';
-  name = '';
   submitted = false;
 
   constructor(private webSocketService: WebSocketService) {
   }
 
+  @Input() name!: string;
+  @Output() nameChange = new EventEmitter<string>();
+
   @Output() registeredChange = new EventEmitter<boolean>();
   private destroyed$ = new Subject();
+
+  nameChanged(newName: string): void {
+    this.name = newName;
+    this.nameChange.emit(newName);
+  }
 
   register(): void {
     // Do something

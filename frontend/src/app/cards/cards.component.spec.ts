@@ -40,7 +40,7 @@ describe('CardsComponent', () => {
 
     fixture.detectChanges();
     expect(cardEl.classList.contains('bg-primary')).toBeTrue();
-    expect(cardEl.classList.contains('text-white')).toBeTrue();
+    expect(cardEl.classList.contains('chosen')).toBeTrue();
   });
 
   it('deselects when the same choice is made', () => {

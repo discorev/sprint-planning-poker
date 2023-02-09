@@ -3,4 +3,5 @@ export class Person {
   choice?: string;
   selected = false;
   snoozed = false;
+  observer = false;
 }

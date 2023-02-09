@@ -13,6 +13,7 @@ import * as confetti from 'canvas-confetti';
 })
 export class AppComponent implements OnDestroy {
   selection?: string;
+  name: string;
   registered = false;
   error?: string;
   players: Person[] = [];
@@ -22,6 +23,7 @@ export class AppComponent implements OnDestroy {
   private destroyed$ = new Subject();
 
   constructor(private socketService: WebSocketService) {
+    this.name = '';
     this.socketService.openSubject$.pipe(
       takeUntil(this.destroyed$)
     ).subscribe(_ => {
@@ -58,7 +60,7 @@ export class AppComponent implements OnDestroy {
         this.players[idx].selected = (msg.selected === true);
         this.players[idx].snoozed = false;
       } else {
-        this.players.push({name: msg.name, selected: (msg.selected === true), snoozed: false});
+        this.players.push({name: msg.name, selected: (msg.selected === true), snoozed: false, observer: false});
       }
     }
 
@@ -94,17 +96,16 @@ export class AppComponent implements OnDestroy {
         const idx = this.players.map(player => player.name).indexOf(choice.name);
         if (idx !== -1) {
           this.players[idx].choice = choice.choice;
-          this.players[idx].selected = true;
+          this.players[idx].selected = choice.choice !== null;
           this.players[idx].snoozed = choice.snoozed;
         } else {
           choice.selected = true;
           this.players.push(choice);
         }
       });
-      // Find the first choice made by a non-snoozed player
-      const firstChoice = msg.choices.find((person: Person) => !person.snoozed)?.choice;
-      // Check that every player's choice matches that, except snoozed players
-      if (firstChoice && msg.choices.every((choice: Person) => (choice.choice === firstChoice || choice.snoozed))) {
+
+      // Check if it's time to celebrate
+      if (this.isTimeToCelebrate(msg.choices)) {
         this.confetti = true;
         // @ts-ignore
         confetti.create(null, { resize: true })({
@@ -118,6 +119,36 @@ export class AppComponent implements OnDestroy {
       }
     }
     console.log(msg);
+  }
+
+  isTimeToCelebrate(results: Person[]): boolean {
+    // Check that the cannon has not already fired for this round
+    if (this.confetti) {
+      return false;
+    }
+
+    const activePlayers = results.filter(person => !person.snoozed && !person.observer);
+    // Don't celebrate if there are more than two players
+    if (activePlayers.length < 2) {
+      return false;
+    }
+
+    // Log the currently active players
+    console.log(activePlayers);
+
+    const firstChoice = activePlayers[0].choice;
+    if (!firstChoice) {
+      return false;
+    }
+    return activePlayers.every(person => person.choice === firstChoice);
+  }
+
+  isObserver(): boolean {
+    const self = this.players.find(person => person.name === this.name);
+    if (self) {
+      return self.observer;
+    }
+    return false;
   }
 
   ngOnDestroy(): void {

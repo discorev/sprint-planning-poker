@@ -2,10 +2,10 @@
   <div class="col">
     <div class="card-deck">
       <a href="#" *ngFor="let card of cards" class="card choice-link" tabindex="0"
-           [ngClass]="{'bg-primary': card == selection, 'text-white': card == selection}"
+           [ngClass]="{'chosen': card == selection}"
            (click)="choose(card); $event.preventDefault()" role="button">
-        <div class="card-body">
-          <p class="card-text text-center">{{card}}</p>
+        <div class="card-img-overlay d-flex">
+          <p class="card-text align-self-center mx-auto">{{card}}</p>
         </div>
       </a>
     </div>

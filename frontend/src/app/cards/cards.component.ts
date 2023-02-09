@@ -3,7 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 @Component({
   selector: 'app-cards',
   templateUrl: './cards.component.html',
-  styles: ['a.choice-link:focus { outline-style: none; }']
+  styleUrls: ['./cards.component.scss']
 })
 export class CardsComponent {
   cards = ['?', '1', '2', '3', '5', '8', '13', '21'];

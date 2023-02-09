@@ -1,0 +1,24 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+.selected {
+  border-color: theme-color("primary") !important;
+}
+
+.btn-snooze {
+  color: fuchsia;
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+.observer {
+  color: rgb(216, 216, 216);
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+.text-subtle {
+  color: rgb(216, 216, 216)!important;
+}
