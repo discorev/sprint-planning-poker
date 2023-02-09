@@ -2,7 +2,8 @@ import WebSocket = require('ws')
 
 import { Player }  from './models/player.model'
 import { PlayerCollection } from './player-collection'
-import { isAction, isRegisterAction, isRecordChoiceAction, isSnoozeAction } from './models/guards'
+
+import * as Guards from './models/guards'
 
 // Construct the websocket server
 const wss = new WebSocket.Server({ port: 8080 })
@@ -29,6 +30,8 @@ const decodeJson = (json: string): any => {
     }
 }
 
+
+
 // Handle new conenctions
 wss.on('connection', (ws: WSocket) => {
     // Add a state flag to this client as part of the heartbeat
@@ -46,17 +49,17 @@ wss.on('connection', (ws: WSocket) => {
         // Use a custom decode function that catches exceptions and returns undefined if
         // the JSON cannot be parsed (to prevent crashes)
         const message = decodeJson(payload)
-        if (!isAction(message)) {
+        if (!Guards.isAction(message)) {
             return sendError(ws, "malformed request, missing action")
         }
 
         // if the message is a register message, check if anyoen else has used
         // this name, if not, let it be used
-        if(isRegisterAction(message)) {
+        if(Guards.isRegisterAction(message)) {
             if (message.name.length < 3) {
                 return sendError(ws, "name is too short", message.action)
             }
-            const player = new Player(message.name)
+            const player = new Player(message.name, message.observer ?? false)
             if (!players.register(player)) {
                 return sendError(ws, "name is already taken", message.action)
             }
@@ -97,10 +100,15 @@ wss.on('connection', (ws: WSocket) => {
         }
 
         // If someone has made a choice, record it
-        if (isRecordChoiceAction(message)) {
+        if (Guards.isRecordChoiceAction(message)) {
             // locate the player that made the choice
             const player = players.find(player => player === ws.player)
             player.snoozed = false // this player is awake
+
+            // Observers cannot vote
+            if (player.observer) {
+                return
+            }
 
             // Don't allow choices to be changed after they've been revealed
             if (players.allHaveChosen) {
@@ -128,7 +136,7 @@ wss.on('connection', (ws: WSocket) => {
             })
         }
 
-        if (isSnoozeAction(message)) {
+        if (Guards.isSnoozeAction(message)) {
             const player = players.find(player => player.name === message.player)
             if (!player) {
                 return sendError(ws, "Player not found", message.action)
@@ -143,6 +151,7 @@ wss.on('connection', (ws: WSocket) => {
                 }
             })
 
+            // If all players have chosen, send back the choices response
             if (players.length > 1 && players.allHaveChosen) {
                 const msg = JSON.stringify({choices: players})
                 wss.clients.forEach(client => {

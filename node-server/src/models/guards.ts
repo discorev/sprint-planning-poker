@@ -3,15 +3,16 @@ interface Action {
 }
 
 export function isAction(object: unknown): object is Action {
-    return Object.prototype.hasOwnProperty.call(object, 'action')
+    return typeof object === 'object' && object !== null && Object.hasOwn(object, 'action')
 }
 
 interface RegisterAction extends Action {
     name: string
+    observer?: boolean
 }
 
 export function isRegisterAction(action: Action): action is RegisterAction {
-    return action.action === "register" && Object.prototype.hasOwnProperty.call(action, 'name')
+    return action.action === "register" && Object.hasOwn(action, 'name')
 }
 
 interface RecordChoiceAction extends Action {
@@ -27,5 +28,5 @@ interface SnoozeAction extends Action {
 }
 
 export function isSnoozeAction(action: Action): action is SnoozeAction {
-    return action.action === "snooze" && Object.prototype.hasOwnProperty.call(action, 'player')
+    return action.action === "snooze" && Object.hasOwn(action, 'player')
 }

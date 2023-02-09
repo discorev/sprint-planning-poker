@@ -24,7 +24,16 @@ export class PlayerCollection extends Array<Player> {
         return result;
     }
 
+    get active(): Player[] {
+        return this.filter(player => player.snoozed !== true && player.observer === false)
+    }
+
     get allHaveChosen(): boolean {
-        return this.every(player => (player.choice != null || player.snoozed === true));
+        // It doesn't count if there is only one player
+        const active = this.active
+        if (active.length <= 1) {
+            return false;
+        }
+        return active.every(player => player.choice != null);
     }
 }

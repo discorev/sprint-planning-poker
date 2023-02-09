@@ -6,9 +6,9 @@
       "moduleResolution": "node",
       "pretty": true,
       "sourceMap": true,
-      "target": "es6",
+      "target": "es2022",
       "resolveJsonModule": true,
-      "outDir": "./dist",
+      "outDir": "./dist"
     },
-    "include": ["./src/**/*"]
+    "include": ["./src/**/*"],
   }
