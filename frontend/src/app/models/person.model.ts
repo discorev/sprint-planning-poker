@@ -1,7 +1,7 @@
-export class Person {
-  name?: string;
-  choice?: string;
-  selected = false;
-  snoozed = false;
-  observer = false;
+export interface Person {
+  name: string;
+  choice: string | undefined;
+  selected: boolean;
+  snoozed: boolean;
+  observer: boolean;
 }

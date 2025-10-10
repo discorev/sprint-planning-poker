@@ -4,28 +4,28 @@ metadata:
   name: sprint-planning-poker
 build:
   artifacts:
-  - image: discorev/sprint-planning-poker-server
-    context: node-server
-    docker:
-      dockerfile: Dockerfile.dev
-    sync:
-      manual:
-        - src: 'src/**/*.*'
-          dest: .
-  - image: discorev/sprint-planning-poker-website
-    context: frontend
-    docker:
-      dockerfile: Dockerfile.dev
-      buildArgs:
-        FONTAWESOME_NPM_TOKEN: "{{ .FONTAWESOME_NPM_TOKEN }}"
-    sync:
-      manual:
-        - src: 'src/**/*.*'
-          dest: .
+    - image: discorev/sprint-planning-poker-server
+      context: node-server
+      docker:
+        dockerfile: Dockerfile.dev
+      sync:
+        manual:
+          - src: "src/**/*.*"
+            dest: .
+    - image: discorev/sprint-planning-poker-website
+      context: frontend
+      docker:
+        dockerfile: Dockerfile.dev
+        buildArgs:
+          FONTAWESOME_NPM_TOKEN: "{{ .FONTAWESOME_NPM_TOKEN }}"
+      sync:
+        manual:
+          - src: "src/**/*.*"
+            dest: .
 manifests:
   rawYaml:
-  - k8s/namespace.yaml
-  - k8s/redis.yaml
-  - k8s/frontend.yaml
-  - k8s/ingress.yaml
-  - k8s/server.yaml
+    - k8s/namespace.yaml
+    # - k8s/redis.yaml
+    - k8s/frontend.yaml
+    - k8s/ingress.yaml
+    - k8s/server.yaml

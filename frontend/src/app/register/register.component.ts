@@ -12,11 +12,14 @@ export class RegisterComponent implements OnDestroy {
   error = '';
   submitted = false;
 
+  observer = false;
+
   constructor(private webSocketService: WebSocketService) {
   }
 
   @Input() name!: string;
   @Output() nameChange = new EventEmitter<string>();
+  // var observer: boolean = false;
 
   @Output() registeredChange = new EventEmitter<boolean>();
   private destroyed$ = new Subject();
@@ -29,7 +32,7 @@ export class RegisterComponent implements OnDestroy {
   register(): void {
     // Do something
     this.error = '';
-    this.webSocketService.register(this.name).pipe(
+    this.webSocketService.register(this.name, this.observer).pipe(
       takeUntil(this.destroyed$)
     ).subscribe(result => {
       if (!result) {

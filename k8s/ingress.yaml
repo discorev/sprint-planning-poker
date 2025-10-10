@@ -18,7 +18,7 @@
                   name: frontend-cluster-ip-service
                   port:
                     number: 4200
-            - path: /ws
+            - path: /api/ws
               pathType: Prefix
               backend:
                 service:

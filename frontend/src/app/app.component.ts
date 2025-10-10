@@ -1,5 +1,6 @@
 import { Component, OnDestroy } from '@angular/core';
 import { WebSocketService } from '@app/services/web-socket.service';
+import { PlayerService } from '@app/services/player.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Person } from '@app/models/person.model';
@@ -16,13 +17,12 @@ export class AppComponent implements OnDestroy {
   name: string;
   registered = false;
   error?: string;
-  players: Person[] = [];
   showReset = false;
   confetti = false;
   connected = false;
   private destroyed$ = new Subject();
 
-  constructor(private socketService: WebSocketService) {
+  constructor(private socketService: WebSocketService, private playerService: PlayerService) {
     this.name = '';
     this.socketService.openSubject$.pipe(
       takeUntil(this.destroyed$)
@@ -41,6 +41,10 @@ export class AppComponent implements OnDestroy {
     ).subscribe(msg => this.handleMessage(msg));
   }
 
+  get players(): Person[] {
+    return this.playerService.listPlayers();
+  }
+
   selectionChanged(newSelection: string): void {
     this.socketService.send({choice: newSelection, action: 'record-choice'});
   }
@@ -55,27 +59,25 @@ export class AppComponent implements OnDestroy {
 
   handleMessage(msg: any): void {
     if (msg.name && msg.selected !== undefined) {
-      const idx = this.players.map(player => player.name).indexOf(msg.name);
-      if (idx !== -1) {
-        this.players[idx].selected = (msg.selected === true);
-        this.players[idx].snoozed = false;
+      const player = this.playerService.findByName(msg.name);
+      if (player) {
+        player.selected = (msg.selected === true);
+        player.snoozed = false;
       } else {
-        this.players.push({name: msg.name, selected: (msg.selected === true), snoozed: false, observer: false});
+        this.playerService.add({name: msg.name, choice: undefined, selected: (msg.selected === true), snoozed: false, observer: false});
       }
     }
 
     if (msg.players) {
-      this.players = (msg.players as Person[]).map(player => {
-        player.selected = false;
-        return player;
-      });
-      console.log(this.players);
+      this.playerService.clear();
+      (msg.players as Person[]).forEach(player => this.playerService.add(player));
+      console.log(this.playerService.listPlayers());
     }
 
     if (msg.action && msg.action === 'snooze') {
-      const idx = this.players.map(player => player.name).indexOf(msg.player);
-      if (idx !== -1) {
-        this.players[idx].snoozed = msg.snoozed;
+      const player = this.playerService.findByName(msg.player);
+      if (player) {
+        player.snoozed = msg.snoozed;
       }
     }
 
@@ -83,29 +85,26 @@ export class AppComponent implements OnDestroy {
       this.showReset = false;
       this.selection = undefined;
       this.confetti = false;
-      this.players.forEach(player => {
-        player.choice = undefined;
-        player.selected = false;
-      });
+      this.playerService.reset();
     }
 
     if (msg.choices) {
       this.showReset = true;
       msg.choices.forEach((choice: Person) => {
         // find the matching player and update their choice
-        const idx = this.players.map(player => player.name).indexOf(choice.name);
-        if (idx !== -1) {
-          this.players[idx].choice = choice.choice;
-          this.players[idx].selected = choice.choice !== null;
-          this.players[idx].snoozed = choice.snoozed;
+        const player = this.playerService.findByName(choice.name);
+        if (player) {
+          player.choice = choice.choice;
+          player.selected = choice.choice !== null;
+          player.snoozed = choice.snoozed;
         } else {
           choice.selected = true;
-          this.players.push(choice);
+          this.playerService.add(choice);
         }
       });
 
       // Check if it's time to celebrate
-      if (this.isTimeToCelebrate(msg.choices)) {
+      if (this.isTimeToCelebrate()) {
         this.confetti = true;
         // @ts-ignore
         confetti.create(null, { resize: true })({
@@ -121,30 +120,17 @@ export class AppComponent implements OnDestroy {
     console.log(msg);
   }
 
-  isTimeToCelebrate(results: Person[]): boolean {
+  isTimeToCelebrate(): boolean {
     // Check that the cannon has not already fired for this round
     if (this.confetti) {
       return false;
     }
 
-    const activePlayers = results.filter(person => !person.snoozed && !person.observer);
-    // Don't celebrate if there are more than two players
-    if (activePlayers.length < 2) {
-      return false;
-    }
-
-    // Log the currently active players
-    console.log(activePlayers);
-
-    const firstChoice = activePlayers[0].choice;
-    if (!firstChoice) {
-      return false;
-    }
-    return activePlayers.every(person => person.choice === firstChoice);
+    return this.playerService.allAgree();
   }
 
   isObserver(): boolean {
-    const self = this.players.find(person => person.name === this.name);
+    const self = this.playerService.listPlayers().find(person => person.name === this.name);
     if (self) {
       return self.observer;
     }

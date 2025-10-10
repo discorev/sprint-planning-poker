@@ -52,14 +52,15 @@ export class WebSocketService implements OnDestroy {
   /**
    * Register the user and return a boolean once it's confirmed it was successful.
    * @param name - The name to register with
+   * @param observer - If the user should be an observer only
    */
-  public register(name: string): Observable<boolean> {
+  public register(name: string, observer: boolean = false): Observable<boolean> {
     if (!this.socket$ || this.socket$.closed) {
       return of(false);
     }
     // send a message registering the user
     localStorage.setItem('name', name);
-    this.socket$.next({action: 'register', name});
+    this.socket$.next({action: 'register', name, observer});
     return this.hasRegistered$.asObservable();
   }
 
