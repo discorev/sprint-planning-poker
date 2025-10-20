@@ -1,5 +1,5 @@
 # Sprint Planning Poker
-[![Build Status](https://travis-ci.com/discorev/sprint-planning-poker.svg?branch=main)](https://travis-ci.com/discorev/sprint-planning-poker)
+[![build](https://github.com/discorev/sprint-planning-poker/actions/workflows/action.yml/badge.svg)](https://github.com/discorev/sprint-planning-poker/actions/workflows/action.yml)
 [![codecov](https://codecov.io/gh/discorev/sprint-planning-poker/branch/main/graph/badge.svg?token=8IRZ65UZSB)](https://codecov.io/gh/discorev/sprint-planning-poker)
 [![CodeFactor](https://www.codefactor.io/repository/github/discorev/sprint-planning-poker/badge)](https://www.codefactor.io/repository/github/discorev/sprint-planning-poker)
 

@@ -1,6 +1,6 @@
-<app-register *ngIf="!registered" (registeredChange)="registered = $event"></app-register>
+<app-register *ngIf="!registered" [(name)]="name" (registeredChange)="registered = $event"></app-register>
 <div class="container" *ngIf="registered" style="margin-top:10px;">
-  <div class="card mb-2">
+  <div *ngIf="!isObserver()" class="card mb-2">
     <div class="card-header">
       Your Choice
     </div>
@@ -12,18 +12,7 @@
 
   <div class="row row-cols-1 row-cols-md-5">
     <div class="col mb-4" *ngFor="let card of players">
-      <div class="card player-choice"
-           [ngClass]="{'border-primary': card.selected === true, 'border': !card.selected}">
-        <div class="card-body text-center">
-          <span class="btn-snooze" [ngClass]="{'text-subtle': !card.snoozed}">
-            <a href="#" (click)="snoozePlayer(card); $event.preventDefault()" class="text-reset">
-              <i [ngClass]="{'fal': !card.snoozed, 'far': card.snoozed}" class="fa-snooze"></i>
-            </a>
-          </span>
-          <h5 class="card-title">{{card.name}}</h5>
-          <p class="card-text">{{card.choice || "&nbsp;"}}</p>
-        </div>
-      </div>
+      <app-player [data]="card" (snoozeClicked)="snoozePlayer(card)"></app-player>
     </div>
     <div class="col mb-4" *ngIf="showReset">
       <a href="#" class="card" tabindex="0" (click)="sendReset(); $event.preventDefault()" role="button">

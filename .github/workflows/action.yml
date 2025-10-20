@@ -1,0 +1,38 @@
+name: build
+on:
+  - push
+  - pull_request
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: install & test
+        working-directory: ./frontend
+        env:
+          FONTAWESOME_NPM_TOKEN: ${{ secrets.FONTAWESOME_NPM_TOKEN }}
+        run: |
+          npm ci
+          npm test
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: ./frontend
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - name: install & test
+        working-directory: ./node-server
+        run: |
+          npm ci
+          npm test
+      - uses: codecov/codecov-action@v3
+        with:
+          directory: ./node-server

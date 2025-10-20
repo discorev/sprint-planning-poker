@@ -37,6 +37,7 @@ describe('AppComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(AppComponent);
     app = fixture.componentInstance;
+    app.registered = true;
     webSocketServiceSpy = TestBed.inject(WebSocketService) as jasmine.SpyObj<WebSocketService>;
     fixture.detectChanges();
   });
@@ -83,8 +84,8 @@ describe('AppComponent', () => {
     const sendSpy = webSocketServiceSpy.send;
     app.sendReset();
     fixture.detectChanges();
-    expect(webSocketServiceSpy.send.calls.count()).toBe(1);
-    expect(webSocketServiceSpy.send.calls.first().args[0]).toEqual({action: 'reset'});
+    expect(sendSpy.calls.count()).toBe(1);
+    expect(sendSpy.calls.first().args[0]).toEqual({action: 'reset'});
   });
 
   it('should accept a list of players from the WebSocket', (done) => {
@@ -106,15 +107,15 @@ describe('AppComponent', () => {
 
   it('should update a players status when they make a selection', (done) => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false },
-      { name: 'player2', selected: false, snoozed: false },
-      { name: 'player3', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false },
+      { name: 'player2', selected: false, snoozed: false, observer: false },
+      { name: 'player3', selected: false, snoozed: false, observer: false }
     ];
 
     const expected = [
-      { name: 'player1', selected: false, snoozed: false },
-      { name: 'player2', selected: true, snoozed: false },
-      { name: 'player3', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false },
+      { name: 'player2', selected: true, snoozed: false, observer: false },
+      { name: 'player3', selected: false, snoozed: false, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -126,7 +127,7 @@ describe('AppComponent', () => {
   it('should add a player to the list if they are not already there and make a choice', (done) => {
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual([
-        { name: 'player2', selected: true, snoozed: false }
+        { name: 'player2', selected: true, snoozed: false, observer: false }
       ]);
       done();
     });
@@ -135,17 +136,17 @@ describe('AppComponent', () => {
 
   it('should reset data when a reset message is sent', (done) => {
     app.players = [
-      { name: 'player1', selected: true, choice: '1', snoozed: false },
-      { name: 'player2', selected: true, choice: '1', snoozed: false },
-      { name: 'player3', selected: true, choice: '1', snoozed: false }
+      { name: 'player1', selected: true, choice: '1', snoozed: false, observer: false },
+      { name: 'player2', selected: true, choice: '1', snoozed: false, observer: false },
+      { name: 'player3', selected: true, choice: '1', snoozed: false, observer: false }
     ];
     app.showReset = true;
     app.selection = '?';
 
     const expected = [
-      { name: 'player1', selected: false, choice: undefined, snoozed: false },
-      { name: 'player2', selected: false, choice: undefined, snoozed: false },
-      { name: 'player3', selected: false, choice: undefined, snoozed: false }
+      { name: 'player1', selected: false, choice: undefined, snoozed: false, observer: false },
+      { name: 'player2', selected: false, choice: undefined, snoozed: false, observer: false },
+      { name: 'player3', selected: false, choice: undefined, snoozed: false, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.showReset).toBeFalse();
@@ -159,8 +160,8 @@ describe('AppComponent', () => {
   it('should reveal all players choices', (done) => {
     app.registered = true; // This is needed to make the players show up
     app.players = [
-      { name: 'player1', selected: false, snoozed: false },
-      { name: 'player2', selected: true, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false },
+      { name: 'player2', selected: true, snoozed: false, observer: false }
     ];
     fixture.detectChanges();
     const cardsBeforeReveal: DebugElement[] = fixture.debugElement.queryAll(By.css('.player-choice'));
@@ -177,9 +178,9 @@ describe('AppComponent', () => {
     });
 
     const expected = [
-      { name: 'player1', selected: true, choice: '?', snoozed: false },
-      { name: 'player2', selected: true, choice: '1', snoozed: false },
-      { name: 'player3', selected: true, choice: '2', snoozed: false }
+      { name: 'player1', selected: true, choice: '?', snoozed: false, observer: false },
+      { name: 'player2', selected: true, choice: '1', snoozed: false, observer: false },
+      { name: 'player3', selected: true, choice: '2', snoozed: false, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -204,32 +205,32 @@ describe('AppComponent', () => {
     });
   });
 
-  it('should fire the confetti cannon when all players choose the same value', (done) => {
+  it('should not fire the confetti cannon when a single player choice is revealed', (done) => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
 
     const expected = [
-      { name: 'player1', selected: true, choice: '?', snoozed: false }
+      { name: 'player1', selected: true, choice: '?', snoozed: false, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
-      expect(app.confetti).toBeTrue();
+      expect(app.confetti).toBeFalse();
       done();
     });
     onMessage$.next({ choices: [
-        { name: 'player1', selected: true, choice: '?', snoozed: false }
+        { name: 'player1', selected: true, choice: '?', snoozed: false, observer: false }
       ]
     });
   });
 
   it('should not fire the confetti cannon if choices are revealed and all players are snoozed', (done) => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
 
     const expected = [
-      { name: 'player1', selected: true, choice: undefined, snoozed: true }
+      { name: 'player1', selected: true, choice: undefined, snoozed: true, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -244,7 +245,7 @@ describe('AppComponent', () => {
 
   it('should send a snooze message when the snooze button is pressed for a player', () => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
     app.registered = true;
     fixture.detectChanges();
@@ -261,14 +262,14 @@ describe('AppComponent', () => {
 
   it('should mark a player as snoozed when a snooze message comes through', (done) => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
     app.registered = true;
     fixture.detectChanges();
     const snoozeSpan: DebugElement = fixture.debugElement.query(By.css('.btn-snooze'));
 
     const expected = [
-      { name: 'player1', selected: false, snoozed: true }
+      { name: 'player1', selected: false, snoozed: true, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);
@@ -281,13 +282,13 @@ describe('AppComponent', () => {
 
   it('should ignore a snooze message for an unknown player', (done) => {
     app.players = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
     app.registered = true;
     fixture.detectChanges();
 
     const expected = [
-      { name: 'player1', selected: false, snoozed: false }
+      { name: 'player1', selected: false, snoozed: false, observer: false }
     ];
     onMessage$.subscribe(_ => {
       expect(app.players).toEqual(expected);

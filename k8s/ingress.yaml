@@ -1,0 +1,27 @@
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ingress
+    namespace: sprint-planning-poker
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  spec:
+    ingressClassName: nginx
+    rules:
+      - http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: frontend-cluster-ip-service
+                  port:
+                    number: 4200
+            - path: /api/ws
+              pathType: Prefix
+              backend:
+                service:
+                  name: server-cluster-ip-service
+                  port:
+                    number: 8080

@@ -1,0 +1,15 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+a.card {
+  width: 100%;
+  aspect-ratio: 2.5/3.5;
+  border-radius: 0.7rem;
+}
+
+a.choice-link:focus { outline-style: none; }
+a.chosen { transform: translateY(-0.6em); }
+
+a.chosen {
+  border-color: theme-color("primary")
+}

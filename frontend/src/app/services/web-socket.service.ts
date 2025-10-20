@@ -23,7 +23,8 @@ export class WebSocketService implements OnDestroy {
   constructor(private webSocketClient: WebSocketClientService) {
     webSocketClient.onOpen$.subscribe(event => this.openSubject$.next(event));
     webSocketClient.onClose$.subscribe(event => this.closeSubject$.next(event));
-    this.socket$ = this.webSocketClient.connect(environment.websocket_api);
+    const websocketApiUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + environment.websocket_api;
+    this.socket$ = this.webSocketClient.connect(websocketApiUrl);
     this.socket$.pipe(
       retryWhen(errors => errors.pipe(
         tap(err => {
@@ -36,7 +37,7 @@ export class WebSocketService implements OnDestroy {
     );
     // Remove the name from local storage
     localStorage.removeItem('name');
-    // Setup a subscription to re-send the registration when the socket reconnects
+    // Set up a subscription to re-send the registration when the socket reconnects
     this.openSubject$.subscribe(_ => {
       if (this.isRegistered) {
         // tslint:disable-next-line:no-shadowed-variable
@@ -51,14 +52,15 @@ export class WebSocketService implements OnDestroy {
   /**
    * Register the user and return a boolean once it's confirmed it was successful.
    * @param name - The name to register with
+   * @param observer - If the user should be an observer only
    */
-  public register(name: string): Observable<boolean> {
+  public register(name: string, observer: boolean = false): Observable<boolean> {
     if (!this.socket$ || this.socket$.closed) {
       return of(false);
     }
     // send a message registering the user
     localStorage.setItem('name', name);
-    this.socket$.next({action: 'register', name});
+    this.socket$.next({action: 'register', name, observer});
     return this.hasRegistered$.asObservable();
   }
 
@@ -75,7 +77,7 @@ export class WebSocketService implements OnDestroy {
 
   /**
    * Handle a message from the websocket
-   * @param msg - the recieved message
+   * @param msg - the received message
    */
   handleMessage(msg: any): void {
     if (!this.isRegistered && msg.action === 'register') {
