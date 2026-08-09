@@ -1,207 +1,104 @@
-import WebSocket = require('ws')
+import { createServer, type Server as HttpServer } from 'node:http'
+import { originValidation, toNodeHandler } from '@modelcontextprotocol/node'
 
-import { Player }  from './models/player.model'
-import { PlayerCollection } from './player-collection'
+import { createPlanningPokerMcpHandler } from './mcp-server'
+import { PlanningPokerSession, type PlanningPokerSessionOptions } from './planning-poker-session'
+import { attachPlanningPokerWebSocketServer, type PlanningPokerWebSocketServer } from './websocket-server'
 
-import * as Guards from './models/guards'
-
-// Construct the websocket server
-const wss = new WebSocket.Server({ port: 8080 })
-const players = new PlayerCollection()
-
-interface WSocket extends WebSocket {
-    isAlive: boolean
-    player?: Player
+export interface PlanningPokerServerOptions extends PlanningPokerSessionOptions {
+    readonly allowedOriginHostnames?: readonly string[]
+    readonly leaseCleanupIntervalMs?: number
+    readonly webSocketHeartbeatIntervalMs?: number
 }
 
-const sendError = (ws: WSocket, message: string, action?: string) => {
-    const error = {error: message}
-    if (action) {
-        error["action"] = action
-    }
-    ws.send(JSON.stringify(error))
+export interface PlanningPokerServer {
+    readonly httpServer: HttpServer
+    readonly session: PlanningPokerSession
+    readonly webSocketServer: PlanningPokerWebSocketServer
+    listen(port?: number, host?: string): Promise<number>
+    close(): Promise<void>
 }
 
-const decodeJson = (json: string): any => {
-    try {
-        return JSON.parse(json)
-    } catch {
-        return undefined
-    }
-}
-
-
-
-// Handle new conenctions
-wss.on('connection', (ws: WSocket) => {
-    // Add a state flag to this client as part of the heartbeat
-    ws.isAlive = true
-
-    // A ping will be sent on an interval to check if clients
-    // are still connected, when they respond, be sure to tag
-    // them as still alive to prevent disconnecting them.
-    ws.on('pong', () => {
-        ws.isAlive = true
+export function createPlanningPokerServer(options: PlanningPokerServerOptions = {}): PlanningPokerServer {
+    const session = new PlanningPokerSession(options)
+    const mcpHandler = createPlanningPokerMcpHandler(session)
+    const handleMcpRequest = toNodeHandler(mcpHandler.handler, {
+        onerror: error => console.error('MCP HTTP adapter failed', error),
     })
-    
-    // Handle messages from clients
-    ws.on('message', function incoming(payload: string) {
-        // Use a custom decode function that catches exceptions and returns undefined if
-        // the JSON cannot be parsed (to prevent crashes)
-        const message = decodeJson(payload)
-        if (!Guards.isAction(message)) {
-            return sendError(ws, "malformed request, missing action")
+    const validateOrigin = originValidation(
+        options.allowedOriginHostnames
+            ? [...options.allowedOriginHostnames]
+            : configuredOriginHostnames(),
+    )
+
+    const httpServer = createServer((request, response) => {
+        const pathname = request.url?.split('?', 1)[0] ?? '/'
+        if (pathname !== '/mcp') {
+            response.writeHead(404, { 'content-type': 'application/json' })
+            response.end(JSON.stringify({ error: 'Not found' }))
+            return
         }
-
-        // if the message is a register message, check if anyoen else has used
-        // this name, if not, let it be used
-        if(Guards.isRegisterAction(message)) {
-            if (message.name.length < 3) {
-                return sendError(ws, "name is too short", message.action)
-            }
-            const player = new Player(message.name, message.observer ?? false)
-            if (!players.register(player)) {
-                return sendError(ws, "name is already taken", message.action)
-            }
-            // If for any reason teh WebSocket has closed
-            // simply remove the player and stop
-            if (ws.readyState !== WebSocket.OPEN) {
-                players.remove(player)
-                return
-            }
-            ws.player = player
-            ws.send(JSON.stringify({
-                action: 'register',
-                players: players.slice(),
-                reset: true
-            }))
-            const msg = JSON.stringify({players: players.slice(), reset: true})
-            wss.clients.forEach(function each(client) {
-                if (client != ws && client.readyState === WebSocket.OPEN) {
-                    client.send(msg)
-                }
-            })
+        response.setHeader('X-Accel-Buffering', 'no')
+        if (!validateOrigin(request, response)) {
+            return
         }
+        void handleMcpRequest(request, response)
+    })
 
-        // All the rest of the options require registration
-        if (!ws.player) {
-            return sendError(ws, "not registered")
-        }
+    const webSocketServer = attachPlanningPokerWebSocketServer(
+        httpServer,
+        session,
+        options.webSocketHeartbeatIntervalMs,
+    )
+    const leaseCleanupTimer = setInterval(
+        () => session.pruneExpiredParticipants(),
+        options.leaseCleanupIntervalMs ?? session.heartbeatIntervalMs,
+    )
 
-        if(message.action === "reset") {
-            // reset all local votes
-            players.reset()
-            const msg = JSON.stringify({reset: true, originator: ws.player.name})
-            wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(msg)
-                }
+    return {
+        httpServer,
+        session,
+        webSocketServer,
+        listen: (port = 8080, host) => new Promise<number>((resolve, reject) => {
+            const onError = (error: Error): void => reject(error)
+            httpServer.once('error', onError)
+            httpServer.listen(port, host, () => {
+                httpServer.off('error', onError)
+                const address = httpServer.address()
+                resolve(typeof address === 'object' && address ? address.port : port)
             })
-        }
-
-        // If someone has made a choice, record it
-        if (Guards.isRecordChoiceAction(message)) {
-            // locate the player that made the choice
-            const player = players.find(player => player === ws.player)
-            player.snoozed = false // this player is awake
-
-            // Observers cannot vote
-            if (player.observer) {
-                return
-            }
-
-            // Don't allow choices to be changed after they've been revealed
-            if (players.allHaveChosen) {
-                return
-            }
-
-            player.choice = message.choice
-            console.log(player.name, 'made choice', message.choice, 'it was good')
-
-            // Construct the response object
-            var response = JSON.stringify({
-                name: player.name,
-                selected: (message.choice != null)
-            })
-
-            // If all players have made their choice, return the choices
-            if(players.allHaveChosen) {
-                response = JSON.stringify({choices: players.slice()})
-            }
-
-            wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(response)
-                }
-            })
-        }
-
-        if (Guards.isSnoozeAction(message)) {
-            const player = players.find(player => player.name === message.player)
-            if (!player) {
-                return sendError(ws, "Player not found", message.action)
-            }
-
-            // Toggle the player's snooze status and update all clients
-            player.snoozed = !player.snoozed
-            const msg = JSON.stringify({action: "snooze", player: player.name, snoozed: player.snoozed})
-            wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(msg)
-                }
-            })
-
-            // If all players have chosen, send back the choices response
-            if (players.length > 1 && players.allHaveChosen) {
-                const msg = JSON.stringify({choices: players})
-                wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(msg)
-                    }
+        }),
+        close: async () => {
+            clearInterval(leaseCleanupTimer)
+            await webSocketServer.close()
+            await mcpHandler.close()
+            if (httpServer.listening) {
+                await new Promise<void>((resolve, reject) => {
+                    httpServer.close(error => error ? reject(error) : resolve())
                 })
             }
-        }
-    })
+        },
+    }
+}
 
-    ws.on('close', function close(code, reason) {
-        console.log('Closed', ws.player, code, reason)
-        if (ws.player) {
-            players.remove(ws.player)
-            const msg = JSON.stringify({players: players.slice(), reset: true})
-            wss.clients.forEach(function each(client) {
-                if (client != ws && client.readyState === WebSocket.OPEN) {
-                    client.send(msg)
-                }
-            })
-        }
-    })
-
-    // Log that the client has connected
-    console.log('Connected')
-})
-
-// Setup a timer to act as a heart-beat to check that the clients
-// are still alive (if someone's browser craches etc. they will disconnect)
-setInterval(() => {
-    (wss.clients as Set<WSocket>).forEach(function each(ws: WSocket) {
-        if (ws.isAlive === false) {
-            if(ws.player) {
-                players.remove(ws.player)
-                const msg = JSON.stringify({players: players.slice(), reset: true})
-                wss.clients.forEach(function each(client) {
-                    if (client != ws && client.readyState === WebSocket.OPEN) {
-                        client.send(msg)
-                    }
-                })
+function configuredOriginHostnames(): string[] {
+    const configured = (process.env.MCP_ALLOWED_ORIGINS ?? '')
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean)
+        .map(value => {
+            try {
+                return new URL(value).hostname
+            } catch {
+                return value
             }
-            console.log('Client is dead')
-            return ws.terminate()
-        }
+        })
+    return [...new Set(['localhost', '127.0.0.1', '[::1]', ...configured])]
+}
 
-        ws.isAlive = false
-        ws.ping(() => {})
+if (require.main === module) {
+    const server = createPlanningPokerServer()
+    void server.listen().then(port => {
+        console.log(`Planning poker server listening on port ${port}`)
     })
-}, 3000)
-
-// expose the WebSocket Server
-module.exports = wss
+}

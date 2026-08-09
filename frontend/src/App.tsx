@@ -72,7 +72,7 @@ export function App() {
             <section className="mb-2 rounded border border-black/15 bg-white">
               <h2 className="mb-0 border-b border-black/15 bg-black/[0.03] px-5 py-3 text-base font-normal">Your Choice</h2>
               <div className="p-5">
-                <CardDeck disabled={state.showReset} onChoose={choose} selection={state.selection} />
+                <CardDeck cards={state.cards} disabled={state.showReset} onChoose={choose} selection={state.selection} />
               </div>
             </section>
           ) : null}

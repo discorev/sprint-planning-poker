@@ -35,6 +35,23 @@ export function messageError(message: ServerMessage): string | undefined {
   return typeof message.error === 'string' ? message.error : undefined;
 }
 
+export function messageCards(message: ServerMessage): readonly string[] | undefined {
+  if (!Array.isArray(message.cards) || message.cards.length === 0) {
+    return undefined;
+  }
+
+  const cards: string[] = [];
+  const uniqueCards = new Set<string>();
+  for (const card of message.cards) {
+    if (typeof card !== 'string' || card.length === 0 || uniqueCards.has(card)) {
+      return undefined;
+    }
+    cards.push(card);
+    uniqueCards.add(card);
+  }
+  return cards;
+}
+
 export function hasSelectionUpdate(
   message: ServerMessage,
 ): message is ServerMessage & { readonly name: string; readonly selected: unknown } {

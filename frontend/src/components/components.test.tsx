@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { CardDeck, CARDS } from './CardDeck';
+import { CardDeck } from './CardDeck';
 import { ConnectionModal } from './ConnectionModal';
 import { PlayerCard } from './PlayerCard';
 import { Register } from './Register';
@@ -75,22 +75,23 @@ describe('Register', () => {
 });
 
 describe('CardDeck', () => {
-  it('renders the fixed deck and toggles choices through the parent', async () => {
+  it('renders server-provided cards in order and toggles choices through the parent', async () => {
     const user = userEvent.setup();
     const onChoose = vi.fn<(choice: string) => void>();
-    render(<CardDeck disabled={false} onChoose={onChoose} selection="3" />);
+    const cards = ['server-small', 'server-medium', 'server-large'];
+    render(<CardDeck cards={cards} disabled={false} onChoose={onChoose} selection="server-medium" />);
 
-    expect(screen.getAllByRole('button')).toHaveLength(CARDS.length);
-    const chosen = screen.getByRole('button', { name: '3' });
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(cards);
+    const chosen = screen.getByRole('button', { name: 'server-medium' });
     expect(chosen).toHaveAttribute('aria-pressed', 'true');
     expect(chosen).toHaveClass('bg-white', 'text-[#212529]', 'border-[#007bff]');
     expect(chosen).not.toHaveClass('bg-[#007bff]', 'text-white');
     await user.click(chosen);
-    expect(onChoose).toHaveBeenCalledWith('3');
+    expect(onChoose).toHaveBeenCalledWith('server-medium');
   });
 
   it('locks every choice after reveal', () => {
-    render(<CardDeck disabled onChoose={() => undefined} />);
+    render(<CardDeck cards={['1', '2']} disabled onChoose={() => undefined} />);
     screen.getAllByRole('button').forEach((button) => expect(button).toBeDisabled());
   });
 });

@@ -1,6 +1,9 @@
+import { LEGACY_REGISTRATION_CARD_FALLBACK } from '../legacy-card-deck';
 import {
   hasSelectionUpdate,
+  messageCards,
   messageChoices,
+  messageError,
   messagePlayers,
   type Player,
   type ServerMessage,
@@ -17,6 +20,7 @@ export interface AppState {
   readonly showReset: boolean;
   readonly confettiFired: boolean;
   readonly celebrationCount: number;
+  readonly cards: readonly string[];
   readonly players: readonly Player[];
 }
 
@@ -38,6 +42,7 @@ export const initialAppState: AppState = {
   showReset: false,
   confettiFired: false,
   celebrationCount: 0,
+  cards: LEGACY_REGISTRATION_CARD_FALLBACK,
   players: [],
 };
 
@@ -102,6 +107,13 @@ export function allActivePlayersAgree(players: readonly Player[]): boolean {
 
 function applyServerMessage(state: AppState, message: ServerMessage): AppState {
   let next = state;
+
+  if (message.action === 'register' && !messageError(message)) {
+    const cards = messageCards(message);
+    if (cards) {
+      next = { ...next, cards };
+    }
+  }
 
   // These branches intentionally remain independent and ordered to match the legacy client.
   if (hasSelectionUpdate(message)) {

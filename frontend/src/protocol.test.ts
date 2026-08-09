@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   hasSelectionUpdate,
   isRegistrationMessage,
+  messageCards,
   messageChoices,
   messageError,
   messagePlayers,
@@ -24,6 +25,15 @@ describe('server protocol parsing', () => {
     expect(messageError({ error: 500 })).toBeUndefined();
     expect(hasSelectionUpdate({ name: 'Alice', selected: false })).toBe(true);
     expect(hasSelectionUpdate({ name: 'Alice' })).toBe(false);
+  });
+
+  it('accepts only non-empty, unique string card decks', () => {
+    expect(messageCards({ cards: ['small', 'medium', 'large'] })).toEqual(['small', 'medium', 'large']);
+    expect(messageCards({ cards: [] })).toBeUndefined();
+    expect(messageCards({ cards: ['small', 'small'] })).toBeUndefined();
+    expect(messageCards({ cards: ['small', ''] })).toBeUndefined();
+    expect(messageCards({ cards: ['small', 8] })).toBeUndefined();
+    expect(messageCards({ cards: 'small' })).toBeUndefined();
   });
 
   it('normalizes valid players while ignoring malformed entries', () => {

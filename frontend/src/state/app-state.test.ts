@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LEGACY_REGISTRATION_CARD_FALLBACK } from '../legacy-card-deck';
 import type { Player } from '../protocol';
 import { allActivePlayersAgree, appReducer, initialAppState, type AppState } from './app-state';
 
@@ -34,6 +35,33 @@ describe('appReducer', () => {
       error: undefined,
       selection: '8',
     });
+  });
+
+  it('uses valid server cards from successful registration', () => {
+    const cards = ['server-small', 'server-medium', 'server-large'];
+    const result = appReducer(initialAppState, {
+      type: 'server-message',
+      message: { action: 'register', cards },
+    });
+
+    expect(result.cards).toEqual(cards);
+    expect(result.cards).not.toBe(LEGACY_REGISTRATION_CARD_FALLBACK);
+  });
+
+  it('keeps the legacy fallback for omitted, malformed, and failed registration decks', () => {
+    const registrations = [
+      { action: 'register' },
+      { action: 'register', cards: [] },
+      { action: 'register', cards: ['1', '1'] },
+      { action: 'register', cards: ['1', ''] },
+      { action: 'register', cards: ['1', 2] },
+      { action: 'register', cards: ['server-card'], error: 'name is already taken' },
+    ];
+
+    for (const message of registrations) {
+      const result = appReducer(initialAppState, { type: 'server-message', message });
+      expect(result.cards).toBe(LEGACY_REGISTRATION_CARD_FALLBACK);
+    }
   });
 
   it('returns the same state for a duplicate connection update', () => {

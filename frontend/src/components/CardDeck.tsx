@@ -1,18 +1,17 @@
 import { memo } from 'react';
 
-export const CARDS = ['?', '1', '2', '3', '5', '8', '13', '21'] as const;
-
 interface CardDeckProps {
+  readonly cards: readonly string[];
   readonly selection?: string;
   readonly disabled: boolean;
   readonly onChoose: (choice: string) => void;
 }
 
-export const CardDeck = memo(function CardDeck({ selection, disabled, onChoose }: CardDeckProps) {
+export const CardDeck = memo(function CardDeck({ cards, selection, disabled, onChoose }: CardDeckProps) {
   return (
     <div className="flex w-full">
       <div className="-mx-[15px] flex w-full">
-        {CARDS.map((card) => {
+        {cards.map((card) => {
           const chosen = card === selection;
           return (
             <button

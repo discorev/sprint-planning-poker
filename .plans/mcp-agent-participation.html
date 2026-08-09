@@ -1,0 +1,705 @@
+<title>MCP Agent Participation Plan</title>
+<style>
+  :root {
+    --paper: #faf9f5;
+    --card: #fffefb;
+    --ink: #28241f;
+    --muted: #6f685f;
+    --line: #ded8ce;
+    --soft-line: #ebe6dd;
+    --clay: #d97757;
+    --clay-dark: #a94e34;
+    --clay-soft: #f7e5dc;
+    --olive: #788c5d;
+    --olive-dark: #53633d;
+    --olive-soft: #edf1e7;
+    --gold: #b38a3e;
+    --gold-soft: #f5eedf;
+    --shadow: 0 14px 40px rgba(67, 53, 38, 0.07);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: 'Avenir Next', Avenir, 'Gill Sans', sans-serif;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 9% 3%, rgba(217, 119, 87, 0.1), transparent 27rem),
+      radial-gradient(circle at 92% 38%, rgba(120, 140, 93, 0.07), transparent 30rem),
+      linear-gradient(rgba(76, 61, 45, 0.018) 1px, transparent 1px),
+      var(--paper);
+    background-size: auto, auto, 100% 2rem, auto;
+    font-family: var(--sans);
+    line-height: 1.55;
+  }
+
+  .page { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 44px 0 72px; }
+  .masthead {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(32px, 7vw, 76px);
+    border: 1px solid var(--line);
+    border-radius: 3px 3px 28px 3px;
+    background: rgba(255, 254, 251, 0.94);
+    box-shadow: var(--shadow);
+  }
+  .masthead::after {
+    content: 'MCP';
+    position: absolute;
+    right: -0.03em;
+    bottom: -0.31em;
+    color: rgba(217, 119, 87, 0.072);
+    font: 700 clamp(8rem, 23vw, 19rem)/1 var(--serif);
+    letter-spacing: -0.09em;
+    pointer-events: none;
+  }
+  .eyebrow {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0 0 18px;
+    color: var(--clay-dark);
+    font: 700 0.74rem/1.2 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .eyebrow::before { content: ''; width: 28px; height: 2px; background: var(--clay); flex: 0 0 auto; }
+  h1, h2, h3, h4 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.025em; }
+  h1 { position: relative; z-index: 1; max-width: 900px; margin: 0; font-size: clamp(3rem, 7.6vw, 6.5rem); line-height: 0.92; }
+  h1 em { color: var(--clay-dark); font-weight: 500; }
+  .deck { position: relative; z-index: 1; max-width: 760px; margin: 30px 0 0; color: var(--muted); font-size: clamp(1rem, 2vw, 1.25rem); }
+  .chips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 34px; }
+  .chip { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font: 700 0.7rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+  .chip.good { border-color: #cbd5be; color: var(--olive-dark); background: var(--olive-soft); }
+  .chip.warn { border-color: #e7c2b4; color: var(--clay-dark); background: var(--clay-soft); }
+
+  .snapshot { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; margin: 22px 0 58px; }
+  .snapshot-card { padding: 26px; border: 1px solid var(--line); background: var(--card); }
+  .snapshot-card:first-child { border-radius: 3px 3px 3px 22px; }
+  .snapshot-card:last-child { border-radius: 3px 3px 22px 3px; }
+  .snapshot h2 { margin: 0 0 11px; font-size: 1.65rem; }
+  .snapshot p { margin: 0; color: var(--muted); }
+  .statline { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 20px; }
+  .stat strong { display: block; color: var(--clay-dark); font: 500 2rem/1 var(--serif); }
+  .stat span { color: var(--muted); font: 700 0.66rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; }
+
+  section { margin-top: 62px; }
+  .section-head { display: grid; grid-template-columns: 88px 1fr; gap: 18px; align-items: start; margin-bottom: 25px; }
+  .section-letter { color: var(--clay); font: italic 4.5rem/0.8 var(--serif); }
+  .section-head h2 { margin: 0 0 6px; font-size: clamp(2rem, 4.2vw, 3.8rem); line-height: 1; }
+  .section-head p { max-width: 730px; margin: 0; color: var(--muted); }
+
+  .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .decision {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 345px;
+    padding: 26px;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--clay);
+    border-radius: 3px 3px 18px 3px;
+    background: var(--card);
+    box-shadow: 0 8px 22px rgba(67, 53, 38, 0.035);
+  }
+  .decision.weak { border-top-color: var(--gold); }
+  .decision .number { color: var(--clay-dark); font: 700 0.72rem/1 var(--mono); letter-spacing: 0.1em; }
+  .decision h3 { margin: 12px 0 10px; font-size: 1.72rem; line-height: 1.08; }
+  .decision > p { margin: 0 0 18px; color: var(--muted); }
+  .pick { margin-top: auto; padding: 15px; border-left: 3px solid var(--olive); background: var(--olive-soft); }
+  .pick b, .alternative b { display: block; margin-bottom: 5px; font: 700 0.68rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+  .pick b { color: var(--olive-dark); }
+  .alternative { margin-top: 10px; padding: 14px; border: 1px dashed var(--line); color: var(--muted); background: var(--paper); }
+  .alternative b { color: var(--clay-dark); }
+
+  .callout { display: grid; grid-template-columns: auto 1fr; gap: 16px; margin: 24px 0; padding: 22px; border: 1px solid #e6c6b9; border-left: 6px solid var(--clay); background: var(--clay-soft); }
+  .callout.gold { border-color: #e3d2aa; border-left-color: var(--gold); background: var(--gold-soft); }
+  .callout .mark { font: 500 2.4rem/1 var(--serif); color: var(--clay-dark); }
+  .callout.gold .mark { color: #826425; }
+  .callout h3 { margin: 0 0 5px; font-size: 1.35rem; }
+  .callout p { margin: 0; color: #684a3f; }
+  .callout.gold p { color: #65542f; }
+
+  .architecture-card { padding: 24px; border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); overflow-x: auto; }
+  .architecture-card svg { display: block; width: 100%; min-width: 820px; height: auto; }
+  .diagram-title { margin: 0 0 16px; font-size: 1.45rem; }
+  .diagram-note { margin: 12px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+  .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+  .tool { padding: 21px; border: 1px solid var(--line); background: var(--card); }
+  .tool:nth-child(1) { border-radius: 18px 3px 3px 3px; }
+  .tool:nth-child(7) { border-radius: 3px 3px 18px 3px; }
+  .tool-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .tool h3 { margin: 0; font-size: 1.35rem; }
+  .tool-tag { padding: 6px 9px; border-radius: 999px; background: var(--olive-soft); color: var(--olive-dark); font: 700 0.63rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+  .tool-tag.write { background: var(--clay-soft); color: var(--clay-dark); }
+  .tool p { margin: 9px 0 12px; color: var(--muted); font-size: 0.91rem; }
+  pre { margin: 0; padding: 14px; border: 1px solid var(--soft-line); background: #f3f0e9; color: #403a33; font: 0.78rem/1.55 var(--mono); overflow-x: auto; white-space: pre; }
+  code { padding: 0.12em 0.35em; border: 1px solid var(--soft-line); background: #f3f0e9; font-family: var(--mono); font-size: 0.86em; }
+
+  .registration-flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin-top: 18px; }
+  .registration-step { position: relative; padding: 22px 19px; border: 1px solid var(--line); border-right: 0; background: var(--card); }
+  .registration-step:last-child { border-right: 1px solid var(--line); }
+  .registration-step::after { content: '→'; position: absolute; z-index: 2; top: 50%; right: -12px; transform: translateY(-50%); color: var(--clay); font: 500 1.6rem/1 var(--serif); }
+  .registration-step:last-child::after { display: none; }
+  .registration-step b { display: block; margin-bottom: 7px; font-family: var(--serif); font-size: 1.12rem; }
+  .registration-step span { color: var(--muted); font-size: 0.87rem; }
+
+  .sequence { counter-reset: phase; display: grid; gap: 12px; }
+  .phase { counter-increment: phase; display: grid; grid-template-columns: 68px 1fr auto; gap: 18px; align-items: center; padding: 22px; border: 1px solid var(--line); background: var(--card); }
+  .phase:first-child { border-radius: 18px 3px 3px 3px; }
+  .phase:last-child { border-radius: 3px 3px 18px 3px; }
+  .phase-num::before { content: '0' counter(phase); color: var(--clay-dark); font: 500 2rem/1 var(--serif); }
+  .phase h3 { margin: 0 0 3px; font-size: 1.35rem; }
+  .phase p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .gate { max-width: 225px; padding: 10px 12px; border-radius: 999px; color: var(--olive-dark); background: var(--olive-soft); font: 700 0.65rem/1.3 var(--mono); text-align: center; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .state-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+  .state { position: relative; min-height: 118px; padding: 16px; border: 1px solid var(--line); background: var(--card); }
+  .state:not(:last-child)::after { content: '›'; position: absolute; top: 38px; right: -8px; z-index: 2; width: 16px; height: 28px; display: grid; place-items: center; color: var(--clay-dark); background: var(--paper); font: 500 1.5rem/1 var(--serif); }
+  .state b { display: block; margin-bottom: 5px; font-family: var(--serif); }
+  .state span { color: var(--muted); font-size: 0.82rem; }
+  .state .mini { display: inline-block; margin-bottom: 9px; color: var(--clay-dark); font: 700 0.61rem/1 var(--mono); letter-spacing: 0.07em; text-transform: uppercase; }
+
+  .test-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+  .test { padding: 18px; border: 1px solid var(--soft-line); background: rgba(255, 254, 251, 0.78); }
+  .test b { display: block; margin-bottom: 5px; font-family: var(--serif); font-size: 1.08rem; }
+  .test span { color: var(--muted); font-size: 0.88rem; }
+  .check { color: var(--olive); font-weight: 800; }
+
+  details { border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
+  summary { cursor: pointer; padding: 24px 26px; font-family: var(--serif); font-size: 1.45rem; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; float: right; color: var(--clay); }
+  details[open] summary::after { content: '−'; }
+  .details-body { padding: 0 26px 28px; border-top: 1px solid var(--soft-line); }
+  .work-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+  .work { padding: 17px; border-left: 3px solid var(--line); background: var(--paper); }
+  .work b { font-family: var(--serif); }
+  .work ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; }
+
+  .files { display: grid; gap: 9px; margin-top: 18px; }
+  .file { display: grid; grid-template-columns: minmax(260px, 0.9fr) 1.5fr auto; gap: 14px; align-items: center; padding: 15px 17px; border: 1px solid var(--soft-line); background: var(--card); }
+  .file code { justify-self: start; }
+  .file p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+  .file .kind { color: var(--clay-dark); font: 700 0.63rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.07em; }
+
+  .risks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .risk { display: grid; grid-template-columns: auto 1fr; gap: 13px; padding: 19px; border: 1px solid var(--line); background: var(--card); }
+  .risk .severity { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: var(--clay-dark); background: var(--clay-soft); font: 700 0.7rem/1 var(--mono); }
+  .risk h3 { margin: 0 0 4px; font-size: 1.12rem; }
+  .risk p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+
+  .not-doing { display: flex; flex-wrap: wrap; gap: 9px; }
+  .no-pill { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); font-size: 0.86rem; }
+  .no-pill::before { content: '× '; color: var(--clay-dark); font-weight: 800; }
+
+  .tweak { margin-top: 62px; padding: clamp(26px, 5vw, 48px); border: 1px solid #cbd5be; border-radius: 3px 3px 24px 3px; background: var(--olive-soft); }
+  .tweak h2 { margin: 0 0 8px; font-size: clamp(2rem, 4vw, 3.1rem); }
+  .tweak > p { margin: 0 0 22px; color: #5f6b4d; }
+  .reply { margin: 8px 0; padding: 13px 15px; border: 1px solid #cbd5be; background: rgba(255,255,255,0.58); font-family: var(--mono); font-size: 0.84rem; overflow-x: auto; }
+  footer { margin-top: 28px; color: var(--muted); font: 0.72rem/1.5 var(--mono); text-align: center; }
+
+  @media (max-width: 900px) {
+    .snapshot, .decision-grid, .risks, .work-grid { grid-template-columns: 1fr; }
+    .registration-flow { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .registration-step { border-right: 1px solid var(--line); }
+    .registration-step::after { display: none; }
+    .state-strip { grid-template-columns: 1fr 1fr; }
+    .state:not(:last-child)::after { display: none; }
+    .test-grid { grid-template-columns: 1fr 1fr; }
+    .phase { grid-template-columns: 52px 1fr; }
+    .gate { grid-column: 2; justify-self: start; }
+    .file { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px) {
+    .page { width: min(100% - 20px, 1160px); padding-top: 10px; }
+    .masthead { padding: 28px 22px 38px; }
+    .section-head { grid-template-columns: 54px 1fr; }
+    .section-letter { font-size: 3.2rem; }
+    .tool-grid, .registration-flow, .state-strip, .test-grid { grid-template-columns: 1fr; }
+    .phase { grid-template-columns: 1fr; }
+    .gate { grid-column: 1; }
+  }
+</style>
+
+<main class="page">
+  <header class="masthead">
+    <p class="eyebrow">Implementation plan · node-server + MCP</p>
+    <h1>Invite another mind<br>to the <em>poker table.</em></h1>
+    <p class="deck">Expose planning-poker participation as a secure remote MCP server, while keeping the existing React/WebSocket experience intact. Human browsers and agent clients share one round model, one rules engine, and one broadcast stream.</p>
+    <div class="chips">
+      <span class="chip good">Recommended · backend-first slice</span>
+      <span class="chip">Estimated effort · 4–7 focused days</span>
+      <span class="chip">Files · ~10 touched / added</span>
+      <span class="chip warn">Primary risk · participant lifecycle</span>
+      <span class="chip good">Implementation in progress</span>
+    </div>
+  </header>
+
+  <div class="snapshot">
+    <article class="snapshot-card">
+      <p class="eyebrow">What the repository says</p>
+      <h2>The app is connection-shaped, not session-shaped.</h2>
+      <p><code>node-server/src/index.ts</code> owns the entire live server: one raw WebSocket listener, one global <code>PlayerCollection</code>, player identity attached to sockets, and broadcast loops embedded inside action handlers.</p>
+      <div class="statline">
+        <div class="stat"><strong>1</strong><span>global room</span></div>
+        <div class="stat"><strong>4</strong><span>client actions</span></div>
+        <div class="stat"><strong>0</strong><span>participant IDs</span></div>
+        <div class="stat"><strong>0</strong><span>round IDs</span></div>
+      </div>
+    </article>
+    <article class="snapshot-card">
+      <p class="eyebrow">Core move</p>
+      <h2>Extract the table before adding another door.</h2>
+      <p>MCP must not pretend to be a WebSocket client. First create a transport-neutral planning-poker session service; then let WebSocket and MCP adapters call the same methods and emit the same state changes.</p>
+    </article>
+  </div>
+
+  <div class="callout gold">
+    <div class="mark">≡</div>
+    <div>
+      <h3>Hard reveal invariant · no participant sees another vote early.</h3>
+      <p>Before every active voter has chosen, shared state exposes only participant metadata and whether each player has selected. An MCP participant may retrieve its own stored card and rationale because stateless calls cannot rely on durable client-side state; it must never retrieve anyone else’s. On automatic reveal, every client receives the complete choices together. Existing WebSocket behavior remains unchanged apart from the additive server-owned <code>cards</code> field on successful registration.</p>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">A</div>
+      <div>
+        <p class="eyebrow">Judgment calls first</p>
+        <h2>Decisions worth changing now</h2>
+        <p>These choices define the product and trust boundary. The mechanics beneath them should be straightforward once the picks are agreed.</p>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <article class="decision weak">
+        <span class="number">DECISION 01 · WEAKEST POINT</span>
+        <h3>One default room, but a real session boundary</h3>
+        <p>The live app has one global collection. MCP tools still need a stable application boundary to act against, but a full multi-room product would inflate this first slice.</p>
+        <div class="pick"><b>Plan’s pick</b>Introduce a <code>PlanningPokerSession</code> abstraction and expose one configured <code>default</code> session initially. Keep the data structures keyed by session ID so multi-room support is additive rather than another rewrite.</div>
+        <div class="alternative"><b>Alternative</b>Implement multiple user-created rooms immediately. This is cleaner long-term, but it adds room creation, discovery, routing, cleanup, URLs, and frontend ownership to an otherwise backend-focused change.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 02 · CONFIRMED PROTOCOL FLOOR</span>
+        <h3>MCP 2026-07-28, stateless only</h3>
+        <p>This server deliberately targets the new protocol rather than maximizing compatibility with deployed MCP clients.</p>
+        <div class="pick"><b>Confirmed direction</b>Create one Node HTTP server, mount Streamable HTTP at <code>/mcp</code>, and implement the <code>2026-07-28</code> flow only: <code>server/discover</code>, request-scoped responses, and <code>subscriptions/listen</code> SSE for change notifications—without <code>initialize</code>, <code>Mcp-Session-Id</code>, or protocol-level session state. Older clients fail by design.</div>
+        <div class="alternative"><b>Hard exclusion</b>No version negotiation to <code>2025-11-25</code>, compatibility adapter, legacy GET SSE endpoint, <code>Last-Event-ID</code> resumption, or hidden stateful mode. Modern POST-based SSE defined by <code>2026-07-28</code> is part of the selected transport, not a legacy fallback.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 03 · REGISTRATION</span>
+        <h3>Agents register exactly like users</h3>
+        <p>The current app is deliberately open: any client that can reach the WebSocket endpoint may claim an available display name and vote. Adding authentication only to MCP would create a second trust model without protecting the existing browser path.</p>
+        <div class="pick"><b>Plan’s pick</b><code>join_session</code> accepts <code>name</code> and <code>observer</code>, applying the same minimum-length and duplicate-name rules as WebSocket registration. Both successful WebSocket registration and MCP <code>join_session</code> return <code>cards</code>, the exact ordered deck owned and accepted by the shared server domain; <code>get_session_state</code> repeats it for stateless recovery. The unique display name remains the public identifier, matching the original server. Only <code>join_session</code> returns a private opaque <code>participantId</code>; later caller operations pass that handle explicitly, while shared state, resources, WebSocket messages, SSE notifications, and other participants’ tool results expose names rather than private handles. No separate bearer token, OAuth, or signing secret; mandatory HTTP Origin validation remains transport security, not user authentication.</div>
+        <div class="alternative"><b>Later boundary</b>Authentication becomes useful only if the whole app needs identity guarantees—preventing impersonation or unauthorized voting across both WebSocket and MCP clients. That would be a separate product-wide change, not part of agent participation.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 04 · ROUND CONTEXT</span>
+        <h3>The table should know what it is estimating</h3>
+        <p>A generic agent joining through MCP currently sees players and votes, but no story title or task description. It cannot make an informed estimate without an out-of-band prompt.</p>
+        <div class="pick"><b>Plan’s pick</b>Add <code>roundId</code> and an optional <code>subject</code> to session state. Require <code>roundId</code> on vote submission so a slow agent cannot vote into a reset round.</div>
+        <div class="alternative"><b>Alternative</b>Keep task context outside the app and require the caller to prompt the agent separately. Smaller backend change, but the MCP server is no longer self-describing or reliable across clients.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 05 · AGENT LIFECYCLE</span>
+        <h3>Application heartbeat mirrors WebSocket liveness</h3>
+        <p>WebSocket ping/pong detects a dead persistent connection. Stateless MCP has no connection to probe, so it needs the same practical protection at the poker-participant layer instead.</p>
+        <div class="pick"><b>Plan’s pick</b><code>join_session</code> returns the caller’s private <code>participantId</code>, server-selected heartbeat interval, and lease duration. Every successful participant call renews the lease, while a dedicated <code>heartbeat</code> tool keeps an otherwise-idle agent present. <code>leave_session</code> removes immediately; expiry removes crashed or abandoned agents and releases their names and votes.</div>
+        <div class="alternative"><b>Boundary</b>SSE comments keep the notification stream and proxies alive; they do not prove that the poker agent is still participating. The application heartbeat remains separate from MCP transport state, and an expired handle must rejoin.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 06 · EXPLANATIONS</span>
+        <h3>Store rationale beside the estimate</h3>
+        <p>The useful agent contribution is not merely another Fibonacci card—it is a concise reason humans can challenge after reveal.</p>
+        <div class="pick"><b>Plan’s pick</b>Accept an optional rationale with <code>submit_vote</code>, keep it hidden from other participants until reveal, and let the submitting MCP participant recover its own card and rationale through <code>get_session_state</code>. Backend storage lands in this slice; frontend presentation can follow separately.</div>
+        <div class="alternative"><b>Alternative</b>Ship numeric voting only. This keeps the first frontend untouched, but provides little advantage over adding another human-shaped socket bot.</div>
+      </article>
+    </div>
+
+    <div class="callout gold">
+      <div class="mark">!</div>
+      <div>
+        <h3>Current registration resets every vote.</h3>
+        <p><code>PlayerCollection.push()</code> calls <code>reset()</code>, so an agent joining mid-round currently clears the table. The new domain model must make reset an explicit round transition; joins—especially observers and lease renewals—must never reset implicitly.</p>
+      </div>
+    </div>
+
+    <div class="architecture-card">
+      <h3 class="diagram-title">Proposed runtime architecture</h3>
+      <svg viewBox="0 0 1040 430" role="img" aria-label="WebSocket and MCP clients sharing a planning poker session service">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#d97757"/></marker>
+          <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#433526" flood-opacity="0.08"/></filter>
+        </defs>
+        <rect x="28" y="55" width="205" height="116" rx="12" fill="#fffefb" stroke="#ded8ce" filter="url(#soft)"/>
+        <text x="52" y="86" font-family="Georgia" font-size="21" fill="#28241f">Human browsers</text>
+        <text x="52" y="115" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">React client</text>
+        <text x="52" y="139" font-family="SFMono-Regular, monospace" font-size="12" fill="#a94e34">WebSocket · /ws</text>
+
+        <rect x="28" y="257" width="205" height="116" rx="12" fill="#fffefb" stroke="#ded8ce" filter="url(#soft)"/>
+        <text x="52" y="288" font-family="Georgia" font-size="21" fill="#28241f">Agent clients</text>
+        <text x="52" y="317" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">2026-07-28-compatible clients only</text>
+        <text x="52" y="341" font-family="SFMono-Regular, monospace" font-size="12" fill="#a94e34">Stateless HTTP · listen SSE</text>
+
+        <rect x="356" y="55" width="260" height="116" rx="12" fill="#f7e5dc" stroke="#e6c6b9"/>
+        <text x="382" y="86" font-family="Georgia" font-size="21" fill="#28241f">WebSocket adapter</text>
+        <text x="382" y="115" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">Parse existing actions</text>
+        <text x="382" y="139" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">Map socket ↔ participant ID</text>
+
+        <rect x="356" y="257" width="260" height="116" rx="12" fill="#f7e5dc" stroke="#e6c6b9"/>
+        <text x="382" y="288" font-family="Georgia" font-size="21" fill="#28241f">MCP adapter</text>
+        <text x="382" y="317" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">Tools + subscriptions/listen</text>
+        <text x="382" y="341" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">No transport session state</text>
+
+        <rect x="734" y="128" width="278" height="175" rx="18" fill="#edf1e7" stroke="#cbd5be" filter="url(#soft)"/>
+        <text x="763" y="165" font-family="Georgia" font-size="23" fill="#28241f">PlanningPokerSession</text>
+        <text x="763" y="196" font-family="Avenir Next, sans-serif" font-size="14" fill="#53633d">participants · round · votes · leases</text>
+        <line x1="763" y1="214" x2="980" y2="214" stroke="#cbd5be"/>
+        <text x="763" y="240" font-family="SFMono-Regular, monospace" font-size="12" fill="#53633d">join · vote · reset · snooze · leave</text>
+        <text x="763" y="267" font-family="Avenir Next, sans-serif" font-size="14" fill="#6f685f">Broadcast + MCP resource update</text>
+
+        <path d="M233 113 C282 113 304 113 356 113" fill="none" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <path d="M233 315 C282 315 304 315 356 315" fill="none" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <path d="M616 113 C674 113 680 178 734 192" fill="none" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <path d="M616 315 C674 315 680 252 734 238" fill="none" stroke="#d97757" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <path d="M734 278 C679 286 658 343 612 352" fill="none" stroke="#788c5d" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+        <path d="M734 160 C678 151 660 88 612 78" fill="none" stroke="#788c5d" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+        <text x="655" y="344" font-family="SFMono-Regular, monospace" font-size="11" fill="#53633d">state change</text>
+        <text x="653" y="82" font-family="SFMono-Regular, monospace" font-size="11" fill="#53633d">broadcast</text>
+      </svg>
+      <p class="diagram-note">Solid clay arrows are commands into the domain. Dashed olive arrows are state-change notifications back to adapters. No business rule belongs in either transport layer.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">B</div>
+      <div>
+        <p class="eyebrow">Contract design</p>
+        <h2>The agent-facing surface</h2>
+        <p>Agents receive the same player actions as the first-party UI. Tools remain stateless request/response operations; automatic reveal is delivered through the protocol’s modern <code>subscriptions/listen</code> SSE stream.</p>
+      </div>
+    </div>
+
+    <div class="architecture-card" style="margin-bottom:24px">
+      <h3 class="diagram-title">Discovery guidance and the single participation prompt</h3>
+      <p class="diagram-note" style="margin:0 0 16px"><code>McpServer</code> receives server-level <code>instructions</code>, so modern <code>server/discover</code> tells an agent how to participate before it selects a tool. The guidance is concise but covers the complete application lifecycle:</p>
+      <pre>1. join_session once with a unique display name; observers do not vote.
+2. Keep participantId private. It is application state, not authentication,
+   a bearer token, or MCP transport/session state.
+3. Read the round subject, participants, and server-owned cards.
+4. Voters submit one advertised card for the current roundId, optionally with
+   a concise rationale. On a stale roundId, reread state; do not retry blindly.
+5. Use subscriptions/listen for the session resource, then get_session_state
+   after each resource update. Use heartbeat while otherwise idle.
+6. Never seek another participant’s unrevealed vote. Reveal is automatic when
+   all active voters have selected.
+7. Reset only after reveal when asked to start another round; snooze by unique
+   public name when instructed; leave_session when finished.</pre>
+      <div class="callout" style="margin-bottom:0">
+        <div class="mark">1</div>
+        <div>
+          <h3><code>participate-in-planning-poker</code> is the only prompt.</h3>
+          <p><code>prompts/list</code> advertises exactly this reusable prompt—no fragmented action prompts. It requires <code>name</code> with a three-character minimum and accepts optional semantic boolean <code>observer</code> (validated from the protocol’s string argument with Zod <code>stringbool</code>). <code>prompts/get</code> returns one concise user-role message customized with the supplied name and voter/observer role, directing the model to use the server tools and resource through the same lifecycle above.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-grid">
+      <article class="tool">
+        <div class="tool-head"><h3><code>join_session</code></h3><span class="tool-tag write">mutation</span></div>
+        <p>Registers the agent under an available public display name, using the same rules as the browser client. Returns the caller’s private application handle, server-selected liveness timings, and the exact ordered card deck accepted by server vote validation.</p>
+        <pre>{
+  "input": { "name": "Architecture agent", "observer": false },
+  "returns": {
+    "participantId": "participant-7f3…",
+    "heartbeatIntervalSeconds": 30,
+    "leaseDurationSeconds": 90,
+    "sessionResource": "planning-poker://sessions/default",
+    "cards": ["?", "1", "2", "3", "5", "8", "13", "21"],
+    "round": {}
+  }
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>get_session_state</code></h3><span class="tool-tag">read only</span></div>
+        <p>Returns the same server-owned <code>cards</code> deck for stateless recovery, participants by unique public name with <code>selected</code> flags before reveal, and the caller’s own stored vote and rationale. No private participant handles are returned. Other participants’ choices appear only after automatic reveal.</p>
+        <pre>{
+  "input": { "participantId": "participant-7f3…" },
+  "returns": {
+    "stateRevision": 18,
+    "cards": ["?", "1", "2", "3", "5", "8", "13", "21"],
+    "round": { "status": "voting" },
+    "participants": [{ "name": "Architecture agent", "selected": true }],
+    "ownVote": { "card": "5", "rationale": "Touches storage." }
+  }
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>submit_vote</code></h3><span class="tool-tag write">mutation</span></div>
+        <p>Records one card and optional rationale for the supplied application participant. Rejects unknown handles, stale round IDs, observers, invalid cards, and post-reveal changes.</p>
+        <pre>{
+  "participantId": "participant-7f3…",
+  "roundId": "round-12",
+  "card": "5",
+  "rationale": "Touches storage and reconnect semantics."
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>reset_round</code></h3><span class="tool-tag write">mutation</span></div>
+        <p>Starts the next round after the current round has revealed, matching the first-party reset action. Rejects resets while voting is still in progress.</p>
+        <pre>{
+  "participantId": "participant-7f3…",
+  "subject": "Optional next story"
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>snooze_participant</code></h3><span class="tool-tag write">mutation</span></div>
+        <p>Snoozes the caller or another participant when instructed, matching the original WebSocket server’s name-based behavior. The caller uses its private handle; the target uses the unique public display name. A snoozed participant stops counting toward automatic reveal.</p>
+        <pre>{
+  "participantId": "participant-7f3…",
+  "targetName": "Architecture agent"
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>heartbeat</code></h3><span class="tool-tag write">liveness</span></div>
+        <p>Renews an otherwise-idle participant’s application lease. Unknown or expired handles fail and must rejoin; no MCP connection or transport session is created.</p>
+        <pre>{
+  "input": { "participantId": "participant-7f3…" },
+  "returns": { "alive": true, "leaseDurationSeconds": 90 }
+}</pre>
+      </article>
+      <article class="tool">
+        <div class="tool-head"><h3><code>leave_session</code></h3><span class="tool-tag write">mutation</span></div>
+        <p>Explicitly removes the participant referenced by the application handle and releases its vote. Lease expiry remains the fallback for clients that disappear without calling it.</p>
+        <pre>{
+  "input": { "participantId": "participant-7f3…" },
+  "returns": { "left": true }
+}</pre>
+      </article>
+    </div>
+
+    <div class="callout">
+      <div class="mark">→</div>
+      <div>
+        <h3>Reset and snooze are player actions; reveal is an event.</h3>
+        <p>Agents can reset after reveal and snooze themselves or another participant by unique public name, matching first-party capabilities. There is no reveal tool: when all active voters have chosen, WebSockets receive the new state and MCP listeners receive <code>notifications/resources/updated</code> for the session URI, then call <code>get_session_state</code> for their viewer-safe projection.</p>
+      </div>
+    </div>
+
+    <h3 style="margin:36px 0 8px;font-size:1.55rem">Stateless registration flow</h3>
+    <div class="registration-flow">
+      <div class="registration-step"><b>1 · Discover</b><span>A <code>2026-07-28</code> client calls <code>server/discover</code>. No initialize handshake or protocol session is created.</span></div>
+      <div class="registration-step"><b>2 · Register</b><span><code>join_session</code> supplies a display name and observer flag.</span></div>
+      <div class="registration-step"><b>3 · Return contract</b><span>The server returns the caller’s private <code>participantId</code>, heartbeat interval, lease duration, and the canonical ordered <code>cards</code> deck. This is the only response that exposes the handle; both transports advertise the same deck.</span></div>
+      <div class="registration-step"><b>4 · Listen</b><span>The client opens <code>subscriptions/listen</code> for session resource updates over modern request-scoped SSE; notifications carry only the resource URI, never participant handles.</span></div>
+      <div class="registration-step"><b>5 · Act explicitly</b><span>State, vote, reset, heartbeat, and leave carry the caller’s <code>participantId</code>; snooze additionally targets a player by unique public <code>targetName</code>. No identity is retained by the transport.</span></div>
+    </div>
+
+    <div class="callout">
+      <div class="mark">↯</div>
+      <div>
+        <h3>Client configuration: HTTP transport, modern protocol era.</h3>
+        <p>Client configuration uses HTTP transport with <code>protocolEra: "modern"</code>. Do not select legacy transport type <code>"sse"</code>: modern HTTP opens SSE response streams for requests such as <code>subscriptions/listen</code>.</p>
+      </div>
+    </div>
+
+    <div class="callout gold">
+      <div class="mark">⌁</div>
+      <div>
+        <h3>This intentionally preserves the current trust model.</h3>
+        <p>Any client that can reach the app may claim an unused name and vote. Authentication would prevent impersonation only if it covered browser users too; adding it solely to MCP would add setup and failure modes without securing the table as a whole.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">C</div>
+      <div>
+        <p class="eyebrow">Sequencing</p>
+        <h2>Move the rules, then open the door</h2>
+        <p>The sequence isolates behavior changes before MCP is introduced, so domain regressions are distinguishable from transport and registration bugs.</p>
+      </div>
+    </div>
+
+    <div class="sequence">
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Freeze current round behavior</h3><p>Add server-level fixtures and integration tests for register, vote, automatic reveal, reset, observer, snooze, disconnect, and duplicate-name rejection before moving logic out of <code>index.ts</code>.</p></div>
+        <div class="gate">Gate · existing WebSocket contract covered</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Extract the session domain</h3><p>Introduce private participant handles while retaining names as public identifiers, plus explicit round state, one canonical ordered card deck used by validation and registration responses, caller-aware vote projection, explicit reset, rationale storage, lease pruning, and a single state-change notification.</p></div>
+        <div class="gate">Gate · domain tests pass without sockets</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Rewire WebSocket behavior</h3><p>Keep existing frontend wire behavior stable while mapping sockets to participant IDs and routing every action through the new domain service. Add the domain-owned <code>cards</code> deck to successful registration and broadcast from one subscription point.</p></div>
+        <div class="gate">Gate · React client behaves unchanged</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Add strict 2026-07-28 modern HTTP</h3><p>Mount stateless MCP at <code>/mcp</code> with legacy rejection, implement <code>server/discover</code> with server-level participation instructions, expose seven first-party player tools plus the single <code>participate-in-planning-poker</code> prompt, and publish session changes through <code>subscriptions/listen</code> SSE without creating protocol sessions.</p></div>
+        <div class="gate">Gate · discover succeeds; initialize fails</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Match browser registration and liveness semantics</h3><p>Create application participant handles from open name registration, return the same server-owned cards as browser registration plus server-selected heartbeat timings, renew leases from participant activity, and provide a dedicated heartbeat for agents idle between poker actions.</p></div>
+        <div class="gate">Gate · liveness cleanup remains application state</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Prove modern HTTP/SSE and deliberate legacy failure</h3><p>Connect with HTTP transport and modern protocol era, open <code>subscriptions/listen</code>, and exercise every player action. Then prove legacy initialize and GET SSE fail while obsolete session and resumption headers are ignored, never created or echoed.</p></div>
+        <div class="gate">Gate · new works; legacy fails closed</div>
+      </article>
+    </div>
+
+    <h3 style="margin:36px 0 8px;font-size:1.55rem">Agent participant lifecycle</h3>
+    <div class="state-strip">
+      <div class="state"><span class="mini">discover + listen</span><b>Connected</b><span>Modern HTTP is confirmed and a request-scoped SSE subscription listens for resource updates.</span></div>
+      <div class="state"><span class="mini">join_session</span><b>Present</b><span>A unique public display name receives a private application <code>participantId</code>, server-owned <code>cards</code>, and server-selected liveness timings.</span></div>
+      <div class="state"><span class="mini">heartbeat + ID</span><b>Alive</b><span>Idle agents renew their participant lease without creating MCP connection state.</span></div>
+      <div class="state"><span class="mini">submit_vote + ID</span><b>Voted</b><span>Card and rationale are stored against the participant and current round ID; activity also renews the lease.</span></div>
+      <div class="state"><span class="mini">resource updated</span><b>Revealed</b><span>Automatic reveal broadcasts to WebSockets and wakes MCP listeners, which read viewer-projected state.</span></div>
+      <div class="state"><span class="mini">leave or expiry</span><b>Removed</b><span>Participant and vote are deleted; completion is recalculated.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">D</div>
+      <div>
+        <p class="eyebrow">Mechanical work</p>
+        <h2>The “trust me” checklist</h2>
+        <p>Detailed implementation work is collapsed. The decisions above should remain easy to review without reading every file operation.</p>
+      </div>
+    </div>
+
+    <details>
+      <summary>Open the implementation checklist</summary>
+      <div class="details-body">
+        <div class="work-grid">
+          <div class="work"><b>Domain model</b><ul><li>Add private immutable participant handles and transport roles</li><li>Keep unique display names as public identifiers</li><li>Add round ID, optional subject, and explicit status</li><li>Project selected flags plus the MCP caller’s own vote before reveal</li><li>Reveal every participant’s card and rationale by name</li><li>Add the canonical ordered cards to successful registration while preserving all existing fields and behavior</li></ul></div>
+          <div class="work"><b>Session behavior</b><ul><li>Enforce one participant per unique display name</li><li>Remove implicit reset from collection insertion</li><li>Renew leases on successful participant activity</li><li>Prune expired MCP leases before reads and completion checks</li><li>Make leave/remove idempotent</li></ul></div>
+          <div class="work"><b>WebSocket adapter</b><ul><li>Preserve existing <code>register</code>, <code>record-choice</code>, <code>reset</code>, and <code>snooze</code> inputs</li><li>Generate a private internal participant handle per socket registration</li><li>Translate domain state back to existing name-based response shapes and advertise domain-owned cards on registration</li><li>Centralize broadcast loops</li><li>Keep heartbeat cleanup</li></ul></div>
+          <div class="work"><b>MCP adapter</b><ul><li>Use the SDK modern HTTP handler with legacy rejection</li><li>Supply concise server-level lifecycle instructions through the official <code>McpServer</code> options so <code>server/discover</code> advertises them</li><li>Register exactly one <code>participate-in-planning-poker</code> prompt with required three-character <code>name</code> and optional boolean <code>observer</code>; return one customized user-role message</li><li>Register seven tools with explicit application handles and return domain-owned cards from join and state recovery</li><li>Expose session changes through <code>subscriptions/listen</code> and publish standard resource-updated notifications through the handler event bus</li></ul></div>
+          <div class="work"><b>First-party agent actions</b><ul><li>Require the caller’s private participant ID on state, vote, reset, snooze, heartbeat, and leave</li><li>Allow reset only after automatic reveal</li><li>Target snooze by unique public name, matching the WebSocket action</li><li>Renew the application lease on successful participant activity</li><li>Reject unknown, expired, or WebSocket-managed handles and require a fresh MCP join</li></ul></div>
+          <div class="work"><b>Operations</b><ul><li>Retain port 8080 and existing service routing</li><li>Expose <code>/mcp</code> through ingress/proxy configuration</li><li>Disable proxy buffering and permit long-lived listen responses</li><li>Send periodic SSE comments as transport keep-alives</li><li>Document <code>type: "http"</code> plus <code>protocolEra: "modern"</code></li></ul></div>
+          <div class="work"><b>Testing</b><ul><li>Domain tests proving every advertised card passes vote validation</li><li>WebSocket registration tests over a real ephemeral port</li><li>MCP join and state tests proving the same ordered deck</li><li>Modern <code>server/discover</code> asserts the lifecycle instructions and the existing tool count remains seven</li><li><code>prompts/list</code> exposes exactly the participation prompt; <code>prompts/get</code> validates and uses name/observer arguments</li><li>React tests render server-provided cards in order, with cross-transport, HTTP/SSE, heartbeat, and lease-expiry coverage retained</li></ul></div>
+          <div class="work"><b>Protocol boundary</b><ul><li>Advertise only MCP <code>2026-07-28</code> through <code>server/discover</code></li><li>Validate <code>Origin</code> and required metadata headers against the request body</li><li>Reject initialize and return 405 for legacy GET/DELETE transport requests</li><li>Ignore <code>Mcp-Session-Id</code> and <code>Last-Event-ID</code>; never create or echo them</li><li>Keep participant identity explicit in tool inputs; resubscribe and read state after reconnect</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <h3 style="margin:34px 0 8px;font-size:1.55rem">Expected file map</h3>
+    <div class="files">
+      <div class="file"><code>node-server/src/index.ts</code><p>Reduce to server composition: HTTP listener, WebSocket adapter, MCP endpoint, session registry, cleanup timer.</p><span class="kind">major edit</span></div>
+      <div class="file"><code>node-server/src/planning-poker-session.ts</code><p>New transport-neutral domain service and state-change event surface.</p><span class="kind">new</span></div>
+      <div class="file"><code>node-server/src/models/session.model.ts</code><p>Participant, round, vote, rationale, caller-aware/revealed projections, and card types.</p><span class="kind">new</span></div>
+      <div class="file"><code>node-server/src/player-collection.ts</code><p>Retire or narrow. Existing array subclass should not remain the primary rules engine.</p><span class="kind">replace</span></div>
+      <div class="file"><code>node-server/src/models/guards.ts</code><p>Retain WebSocket guards; add explicit reset guard and remove domain decisions from parsing.</p><span class="kind">edit</span></div>
+      <div class="file"><code>node-server/src/websocket-server.ts</code><p>Existing protocol adapter, socket-to-participant mapping, heartbeat, and centralized broadcast.</p><span class="kind">new</span></div>
+      <div class="file"><code>node-server/src/mcp-server.ts</code><p>Strict modern HTTP boundary, discovery instructions, the single participation prompt, seven player tools, session resource projection, notification bus, and <code>subscriptions/listen</code> publishing.</p><span class="kind">new</span></div>
+      <div class="file"><code>node-server/spec/*</code><p>Domain, WebSocket, modern HTTP/SSE, action-parity, lease, and cross-transport coverage.</p><span class="kind">major edit</span></div>
+      <div class="file"><code>node-server/package.json</code><p>Add the official MCP SDK and test scripts using the existing pnpm workflow.</p><span class="kind">edit</span></div>
+      <div class="file"><code>k8s/server.yaml</code><p>Expose <code>/mcp</code> on the existing port with buffering disabled and timeouts suitable for long-lived listen responses.</p><span class="kind">edit</span></div>
+      <div class="file"><code>frontend/src/protocol.ts</code><p>Validate registration cards as a non-empty ordered array of unique non-empty strings.</p><span class="kind">edit</span></div>
+      <div class="file"><code>frontend/src/state/app-state.ts</code><p>Store the registered server deck, retaining an explicitly temporary legacy fallback when older registration responses omit it.</p><span class="kind">edit</span></div>
+      <div class="file"><code>frontend/src/components/CardDeck.tsx</code><p>Render the readonly server-provided deck in order instead of exporting a frontend canonical list.</p><span class="kind">edit</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">E</div>
+      <div>
+        <p class="eyebrow">Verification</p>
+        <h2>Tests that prove it is one table</h2>
+        <p>The critical checks cross transport boundaries. An MCP server can pass isolated tool tests while still failing to participate in the browser-visible round.</p>
+      </div>
+    </div>
+    <div class="test-grid">
+      <div class="test"><b><span class="check">✓</span> WebSocket registration contract</b><span>Successful registration preserves existing behavior and advertises the exact ordered domain deck accepted by vote validation.</span></div>
+      <div class="test"><b><span class="check">✓</span> Caller-aware reveal boundary</b><span>Before reveal, an MCP participant can recover its own card and rationale but never another participant’s; shared and WebSocket state expose selected flags only. Automatic reveal exposes all choices together.</span></div>
+      <div class="test"><b><span class="check">✓</span> Stale round rejection</b><span>An agent reasoning across a reset receives a typed stale-round error instead of voting into the wrong estimate.</span></div>
+      <div class="test"><b><span class="check">✓</span> Heartbeat and expiry</b><span>Heartbeats and poker actions renew the lease; an abandoned participant eventually disappears and releases its name. Before expiry, any player can snooze it out of reveal completion.</span></div>
+      <div class="test"><b><span class="check">✓</span> Private handle flow</b><span>Only <code>join_session</code> returns <code>participantId</code>. Caller actions carry it privately; shared state, resources, WebSocket messages, SSE notifications, and another participant’s tool output expose public names instead.</span></div>
+      <div class="test"><b><span class="check">✓</span> Cross-transport reveal</b><span>A browser vote completes the round; WebSockets receive the broadcast and MCP listeners receive a resource update before reading the same revealed state.</span></div>
+      <div class="test"><b><span class="check">✓</span> Server-owned card deck</b><span>Every advertised card is accepted by domain validation, MCP join and state recovery advertise the same ordered deck, and React renders server-provided values in order.</span></div>
+      <div class="test"><b><span class="check">✓</span> Modern protocol boundary</b><span>Modern HTTP can discover, call tools, and listen; invalid origins or header/body mismatches fail, initialize fails, GET/DELETE return 405, and obsolete headers are ignored.</span></div>
+      <div class="test"><b><span class="check">✓</span> Agent participation guidance</b><span><code>server/discover</code> includes the full lifecycle instructions, tool count remains seven, <code>prompts/list</code> exposes exactly one participation prompt, and <code>prompts/get</code> rejects invalid names while customizing voter and observer messages.</span></div>
+      <div class="test"><b><span class="check">✓</span> Listen reconnect</b><span>After a stream interruption the client resubscribes and reads current state, without relying on unsupported SSE event resumption.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">F</div>
+      <div>
+        <p class="eyebrow">Risks and containment</p>
+        <h2>Where the first version can go wrong</h2>
+      </div>
+    </div>
+    <div class="risks">
+      <article class="risk"><div class="severity">M</div><div><h3>A live but quiet agent loses its lease</h3><p>Contain with conservative server-advertised timings, renewal on every player action, a dedicated heartbeat, and fake-clock boundary tests. Stale agents do not block reveal because any first-party player or agent can snooze them.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>A proxy buffers reveal notifications</h3><p>Contain with <code>X-Accel-Buffering: no</code>, ingress buffering disabled, SSE keep-alive comments, and a deployed-path test that measures notification delivery rather than only localhost behavior.</p></div></article>
+      <article class="risk"><div class="severity">H</div><div><h3>Implicit resets survive refactor</h3><p>Contain with tests that join and renew participants during an active round. Only explicit round transitions clear votes.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>The MCP endpoint is open</h3><p>This matches the existing WebSocket trust model: reachable clients may claim an unused name and vote. Contain accidental conflicts with duplicate-name checks and document that impersonation prevention requires product-wide authentication later.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>Current frontend cannot show rationale</h3><p>Keep backend storage and reveal payload compatible, then choose whether to include the small React presentation slice in the same implementation.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>A listen stream drops an update</h3><p>Notifications are invalidation signals, not the source of truth. On connect or reconnect, agents call <code>get_session_state</code>; the server never relies on unsupported <code>Last-Event-ID</code> resumption.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>Few clients may support the protocol initially</h3><p>This is an accepted compatibility tradeoff. Document HTTP transport with <code>protocolEra: "modern"</code>, test a known <code>2026-07-28</code> client, and treat older-client failure as correct behavior.</p></div></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">G</div>
+      <div>
+        <p class="eyebrow">Deliberate exclusions</p>
+        <h2>Not part of the first slice</h2>
+      </div>
+    </div>
+    <div class="not-doing">
+      <span class="no-pill">Authentication or invitation tokens</span>
+      <span class="no-pill">MCP initialize lifecycle</span>
+      <span class="no-pill">Mcp-Session-Id state</span>
+      <span class="no-pill">Pre-2026-07-28 compatibility</span>
+      <span class="no-pill">Legacy GET-based SSE transport</span>
+      <span class="no-pill">Last-Event-ID stream resumption</span>
+      <span class="no-pill">User-created room UI</span>
+      <span class="no-pill">Persistent database storage</span>
+      <span class="no-pill">Facilitator-controlled reveal</span>
+      <span class="no-pill">Agent-controlled reveal tool</span>
+      <span class="no-pill">Changes to the legacy sam-server</span>
+      <span class="no-pill">MCP sampling or server-side LLM calls</span>
+      <span class="no-pill">Agent invitation button without ownership</span>
+    </div>
+  </section>
+
+  <aside class="tweak">
+    <p class="eyebrow">Review shortcut</p>
+    <h2>Tweak these four things</h2>
+    <p>If the defaults look right, approval can be as short as “go with the picks.” Otherwise, these one-line replies change the plan cleanly.</p>
+    <div class="reply">Implement real multi-room sessions in the first slice, not a default-session abstraction.</div>
+    <div class="reply">Keep task context out of the server; agents will receive the story in their prompt.</div>
+    <div class="reply">Ship numeric agent voting first; defer rationale storage and frontend display.</div>
+    <div class="reply">Use different MCP heartbeat and lease timings from the illustrated 30/90-second defaults.</div>
+  </aside>
+
+  <footer>Prepared from the current Node WebSocket server, React protocol/state layer, deployment configuration, and MCP 2026-07-28 protocol guidance · 9 August 2026</footer>
+</main>

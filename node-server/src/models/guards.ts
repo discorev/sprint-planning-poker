@@ -1,32 +1,54 @@
-interface Action {
-    action: string
-}
-
-export function isAction(object: unknown): object is Action {
-    return typeof object === 'object' && object !== null && Object.hasOwn(object, 'action')
+export interface Action {
+    readonly action: string
 }
 
 interface RegisterAction extends Action {
-    name: string
-    observer?: boolean
-}
-
-export function isRegisterAction(action: Action): action is RegisterAction {
-    return action.action === "register" && Object.hasOwn(action, 'name')
+    readonly action: 'register'
+    readonly name: string
+    readonly observer?: boolean
 }
 
 interface RecordChoiceAction extends Action {
-    choice?: string
-}
-
-export function isRecordChoiceAction(action: Action): action is RecordChoiceAction {
-    return action.action === "record-choice"
+    readonly action: 'record-choice'
+    readonly choice?: string
 }
 
 interface SnoozeAction extends Action {
-    player: string
+    readonly action: 'snooze'
+    readonly player: string
+}
+
+interface ResetAction extends Action {
+    readonly action: 'reset'
+}
+
+export function isAction(value: unknown): value is Action {
+    return isRecord(value) && typeof value.action === 'string'
+}
+
+export function isRegisterAction(action: Action): action is RegisterAction {
+    return action.action === 'register'
+        && isRecord(action)
+        && typeof action.name === 'string'
+        && (action.observer === undefined || typeof action.observer === 'boolean')
+}
+
+export function isRecordChoiceAction(action: Action): action is RecordChoiceAction {
+    return action.action === 'record-choice'
+        && isRecord(action)
+        && (action.choice === undefined || typeof action.choice === 'string')
 }
 
 export function isSnoozeAction(action: Action): action is SnoozeAction {
-    return action.action === "snooze" && Object.hasOwn(action, 'player')
+    return action.action === 'snooze'
+        && isRecord(action)
+        && typeof action.player === 'string'
+}
+
+export function isResetAction(action: Action): action is ResetAction {
+    return action.action === 'reset'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null
 }
