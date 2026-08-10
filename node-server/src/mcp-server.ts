@@ -6,20 +6,13 @@ import {
     PlanningPokerError,
     PlanningPokerSession,
 } from './planning-poker-session'
+import {
+    PLANNING_POKER_SERVER_INSTRUCTIONS,
+    participationPrompt,
+} from './prompts'
 
 export const MCP_PROTOCOL_VERSION = '2026-07-28'
 export const SESSION_RESOURCE_URI = sessionResourceUri('default')
-export const PARTICIPATION_PROMPT_NAME = 'participate-in-planning-poker'
-export const PLANNING_POKER_SERVER_INSTRUCTIONS = [
-    'Participate in planning poker with this lifecycle:',
-    '1. Call join_session once with a unique display name; observers set observer true and do not vote.',
-    '2. Keep participantId private. It is private application state for addressing your participant, not authentication, a bearer token, or MCP transport/session state.',
-    '3. Read the round subject, participants, and server-owned cards. Voters submit one advertised card for the current roundId with an optional concise rationale.',
-    '4. Use subscriptions/listen for the session resource, then call get_session_state after each resource update. Use heartbeat while otherwise idle.',
-    '5. Never attempt to access another participant’s unrevealed vote. Reveal is automatic when all active voters have selected.',
-    '6. If a roundId is stale, reread state instead of retrying blindly. Reset only after reveal when asked to start another round.',
-    '7. Snooze by unique public name when instructed, and call leave_session when finished.',
-].join('\n')
 
 const participantInput = z.object({
     participantId: z.string().min(1),
@@ -41,9 +34,9 @@ function result(value: object): CallToolResult {
     }
 }
 
-async function runTool(operation: () => object): Promise<CallToolResult> {
+async function runTool(operation: () => object | Promise<object>): Promise<CallToolResult> {
     try {
-        return result(operation())
+        return result(await operation())
     } catch (error) {
         if (error instanceof PlanningPokerError) {
             return {
@@ -85,7 +78,7 @@ function createPlanningPokerMcpServer(session: PlanningPokerSession, resourceUri
     )
 
     server.registerPrompt(
-        PARTICIPATION_PROMPT_NAME,
+        'participate-in-planning-poker',
         {
             title: 'Participate in planning poker',
             description: 'Join and participate in the current planning poker session as a voter or observer.',
@@ -156,6 +149,26 @@ function createPlanningPokerMcpServer(session: PlanningPokerSession, resourceUri
     )
 
     server.registerTool(
+        'wait_for_update',
+        {
+            description: 'Long-poll for session changes: blocks until stateRevision advances past sinceRevision (optionally only until reveal or a new round), or until timeout. Renews the caller’s lease, so use it instead of heartbeat while waiting. On timedOut: true, call it again.',
+            inputSchema: z.object({
+                participantId: z.string().min(1),
+                sinceRevision: z.number().int().min(0).describe('The stateRevision from the last state the caller saw.'),
+                timeoutSeconds: z.number().int().min(1).max(25).optional(),
+                until: z.enum(['any-change', 'reveal-or-new-round']).optional()
+                    .describe('Use \'reveal-or-new-round\' after voting to sleep through other participants’ individual votes.'),
+            }),
+        },
+        async ({ participantId, sinceRevision, timeoutSeconds, until }): Promise<CallToolResult> =>
+            runTool(() => session.waitForUpdate(participantId, {
+                sinceRevision,
+                timeoutMs: (timeoutSeconds ?? 25) * 1_000,
+                until,
+            })),
+    )
+
+    server.registerTool(
         'submit_vote',
         {
             description: 'Submit a planning poker card and optional private-until-reveal rationale for the current round.',
@@ -221,21 +234,4 @@ function createPlanningPokerMcpServer(session: PlanningPokerSession, resourceUri
     )
 
     return server
-}
-
-function participationPrompt(name: string, observer: boolean): string {
-    const roleInstruction = observer
-        ? 'You are an observer: read state and participate in discussion, but do not submit a vote.'
-        : 'You are a voter: submit exactly one server-advertised card for the current roundId, with an optional concise rationale.'
-
-    return [
-        `Participate in this planning poker session as “${name}”.`,
-        `Call join_session once with name “${name}” and observer ${observer}. Keep the returned participantId private: it is application state for your participant, not authentication, a bearer token, or MCP transport/session state.`,
-        'Read the round subject, participants, and server-owned cards.',
-        roleInstruction,
-        'Use subscriptions/listen for the session resource and call get_session_state after every resource update. Use heartbeat while otherwise idle.',
-        'Never attempt to access another participant’s unrevealed vote. Reveal happens automatically after all active voters select.',
-        'If a roundId is stale, reread state instead of retrying blindly. Reset only after reveal when asked to start another round.',
-        'Snooze a participant by unique public name when instructed, and call leave_session when finished.',
-    ].join('\n')
 }

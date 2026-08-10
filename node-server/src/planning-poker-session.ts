@@ -68,6 +68,14 @@ export type PlanningPokerEvent =
 
 export type PlanningPokerListener = (event: PlanningPokerEvent) => void
 
+export type WaitUntil = 'any-change' | 'reveal-or-new-round'
+
+export interface WaitForUpdateResult {
+    readonly timedOut: boolean
+    readonly leaseExpiresAt: string
+    readonly state: PlanningPokerState
+}
+
 export interface PlanningPokerSessionOptions {
     readonly sessionId?: string
     readonly heartbeatIntervalMs?: number
@@ -245,6 +253,62 @@ export class PlanningPokerSession {
         const participant = this.requireMcpParticipant(participantId)
         this.renewLease(participant)
         return { leaseExpiresAt: new Date(participant.leaseExpiresAt).toISOString() }
+    }
+
+    async waitForUpdate(
+        participantId: string,
+        options: {
+            readonly sinceRevision: number
+            readonly timeoutMs: number
+            readonly until?: WaitUntil
+        },
+    ): Promise<WaitForUpdateResult> {
+        const participant = this.requireMcpParticipant(participantId)
+        this.renewLease(participant)
+
+        const until = options.until ?? 'any-change'
+        const initialRoundId = this.roundId
+        const isSatisfied = (): boolean =>
+            this.revision > options.sinceRevision
+            && (until === 'any-change' || this.roundStatus === 'revealed' || this.roundId !== initialRoundId)
+
+        const buildResult = (timedOut: boolean): WaitForUpdateResult => {
+            const settledParticipant = this.requireMcpParticipant(participantId)
+            this.renewLease(settledParticipant)
+            return {
+                timedOut,
+                leaseExpiresAt: new Date(settledParticipant.leaseExpiresAt).toISOString(),
+                state: this.projectState(participantId),
+            }
+        }
+
+        if (isSatisfied()) {
+            return buildResult(false)
+        }
+
+        return new Promise<WaitForUpdateResult>((resolve, reject) => {
+            let settled = false
+            const settle = (timedOut: boolean): void => {
+                if (settled) {
+                    return
+                }
+                settled = true
+                unsubscribe()
+                clearTimeout(timer)
+                try {
+                    resolve(buildResult(timedOut))
+                } catch (error) {
+                    reject(error)
+                }
+            }
+
+            const unsubscribe = this.subscribe(() => {
+                if (isSatisfied()) {
+                    settle(false)
+                }
+            })
+            const timer = setTimeout(() => settle(true), options.timeoutMs)
+        })
     }
 
     leaveMcpParticipant(participantId: string): boolean {

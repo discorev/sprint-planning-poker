@@ -9,10 +9,9 @@ import { createPlanningPokerServer, type PlanningPokerServer } from '../src'
 import {
     createPlanningPokerMcpHandler,
     MCP_PROTOCOL_VERSION,
-    PARTICIPATION_PROMPT_NAME,
-    PLANNING_POKER_SERVER_INSTRUCTIONS,
     SESSION_RESOURCE_URI,
 } from '../src/mcp-server'
+import { PLANNING_POKER_SERVER_INSTRUCTIONS } from '../src/prompts'
 import {
     PLANNING_POKER_CARDS,
     PlanningPokerSession,
@@ -65,6 +64,7 @@ interface JoinedToolResult {
 }
 
 interface StateToolResult {
+    readonly stateRevision?: number
     readonly cards: readonly string[]
     readonly round: {
         readonly roundId: string
@@ -98,11 +98,19 @@ describe('planning poker MCP endpoint', () => {
         await server.close()
     })
 
-    test('discovers only MCP 2026-07-28 with participation instructions and exactly seven tools', async () => {
+    test('discovers only MCP 2026-07-28 with participation instructions and exactly eight tools', async () => {
         const discover = await sendModern(endpoint, 'server/discover', {})
         expect(discover.response.status).toBe(200)
         expect(discover.body.result?.supportedVersions).toEqual([MCP_PROTOCOL_VERSION])
         expect(discover.body.result?.instructions).toBe(PLANNING_POKER_SERVER_INSTRUCTIONS)
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('effort/complexity and risk/uncertainty')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('`5` should represent the effort of an average task')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('definition of done')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('Use `?` when you do not have enough context')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('Estimate independently')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('Compare the lowest and highest rationales first')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('Do not automatically average the results')
+        expect(PLANNING_POKER_SERVER_INSTRUCTIONS).toContain('Consensus is useful, but does not prove the estimate is correct')
 
         const tools = await sendModern(endpoint, 'tools/list', {})
         expect(tools.response.status).toBe(200)
@@ -115,9 +123,16 @@ describe('planning poker MCP endpoint', () => {
             'reset_round',
             'snooze_participant',
             'submit_vote',
+            'wait_for_update',
         ])
         expect(toolInputNames(listedTools, 'join_session')).toEqual(['name', 'observer'])
         expect(toolInputNames(listedTools, 'get_session_state')).toEqual(['participantId'])
+        expect(toolInputNames(listedTools, 'wait_for_update')).toEqual([
+            'participantId',
+            'sinceRevision',
+            'timeoutSeconds',
+            'until',
+        ])
         expect(toolInputNames(listedTools, 'submit_vote')).toEqual([
             'card',
             'participantId',
@@ -134,7 +149,7 @@ describe('planning poker MCP endpoint', () => {
         const listed = await sendModern(endpoint, 'prompts/list', {})
         expect(listed.response.status).toBe(200)
         expect(listed.body.result?.prompts).toEqual([expect.objectContaining({
-            name: PARTICIPATION_PROMPT_NAME,
+            name: 'participate-in-planning-poker',
             arguments: [
                 expect.objectContaining({ name: 'name', required: true }),
                 expect.objectContaining({ name: 'observer', required: false }),
@@ -142,7 +157,7 @@ describe('planning poker MCP endpoint', () => {
         })])
 
         const voter = await sendModern(endpoint, 'prompts/get', {
-            name: PARTICIPATION_PROMPT_NAME,
+            name: 'participate-in-planning-poker',
             arguments: { name: 'Estimator' },
         })
         expect(voter.response.status).toBe(200)
@@ -151,10 +166,16 @@ describe('planning poker MCP endpoint', () => {
         const voterText = voter.body.result?.messages?.[0]?.content.text ?? ''
         expect(voterText).toContain('as “Estimator”')
         expect(voterText).toContain('observer false')
-        expect(voterText).toContain('You are a voter')
+        expect(voterText).toContain('When observer is false, submit exactly one server-advertised card')
+        expect(voterText).toContain('effort/complexity and risk/uncertainty')
+        expect(voterText).toContain('`5` should represent the effort of an average task')
+        expect(voterText).toContain('Use `?` when you do not have enough context')
+        expect(voterText).toContain('Estimate independently')
+        expect(voterText).toContain('Compare the lowest and highest rationales first')
+        expect(voterText).toContain('Do not automatically average the results')
 
         const observer = await sendModern(endpoint, 'prompts/get', {
-            name: PARTICIPATION_PROMPT_NAME,
+            name: 'participate-in-planning-poker',
             arguments: { name: 'Observer', observer: 'true' },
         })
         expect(observer.response.status).toBe(200)
@@ -164,14 +185,14 @@ describe('planning poker MCP endpoint', () => {
         expect(observerText).toContain('do not submit a vote')
 
         const invalid = await sendModern(endpoint, 'prompts/get', {
-            name: PARTICIPATION_PROMPT_NAME,
+            name: 'participate-in-planning-poker',
             arguments: { name: 'No' },
         })
         expect(invalid.body.error?.code).toBe(-32602)
-        expect(invalid.body.error?.message).toContain(`Invalid arguments for prompt ${PARTICIPATION_PROMPT_NAME}`)
+        expect(invalid.body.error?.message).toContain('Invalid arguments for prompt participate-in-planning-poker')
 
         const invalidObserver = await sendModern(endpoint, 'prompts/get', {
-            name: PARTICIPATION_PROMPT_NAME,
+            name: 'participate-in-planning-poker',
             arguments: { name: 'Observer', observer: 'sometimes' },
         })
         expect(invalidObserver.body.error?.code).toBe(-32602)
@@ -288,6 +309,44 @@ describe('planning poker MCP endpoint', () => {
         expect(nameAsHandle.body.result?.isError).toBe(true)
         expect(nameAsHandle.body.result?.content?.[0]?.text).toContain('invalid_participant_handle')
         expect(nameAsHandle.body.result?.content?.[0]?.text).not.toContain('SECRET RATIONALE')
+    })
+
+    test('long-polls with wait_for_update, returning fresh state, timeouts, and participant errors', async () => {
+        const alice = await callTool<JoinedToolResult>(endpoint, 'join_session', { name: 'Alice' })
+        const aliceState = await callTool<Required<Pick<StateToolResult, 'stateRevision'>>>(
+            endpoint,
+            'get_session_state',
+            caller(alice),
+        )
+
+        const pending = callTool<{ timedOut: boolean; leaseExpiresAt: string; state: StateToolResult }>(
+            endpoint,
+            'wait_for_update',
+            { ...caller(alice), sinceRevision: aliceState.stateRevision, timeoutSeconds: 25 },
+        )
+        await server.session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+        const changed = await pending
+        expect(changed.timedOut).toBe(false)
+        expect(changed.state.participants.some(participant => participant.name === 'Robert')).toBe(true)
+        expect(new Date(changed.leaseExpiresAt).getTime()).toBeGreaterThan(Date.now())
+
+        const timedOut = await sendModern(endpoint, 'tools/call', {
+            name: 'wait_for_update',
+            arguments: {
+                ...caller(alice),
+                sinceRevision: changed.state.stateRevision,
+                timeoutSeconds: 1,
+            },
+        })
+        const timedOutText = timedOut.body.result?.content?.find(item => item.type === 'text')?.text
+        expect(JSON.parse(timedOutText!)).toMatchObject({ timedOut: true })
+
+        const unknownParticipant = await sendModern(endpoint, 'tools/call', {
+            name: 'wait_for_update',
+            arguments: { participantId: 'unknown', sinceRevision: 0 },
+        })
+        expect(unknownParticipant.body.result?.isError).toBe(true)
+        expect(unknownParticipant.body.result?.content?.[0]?.text).toContain('invalid_participant_handle')
     })
 
     test('renews MCP leases without returning the private participant handle', async () => {

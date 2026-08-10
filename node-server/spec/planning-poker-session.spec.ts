@@ -150,4 +150,93 @@ describe('PlanningPokerSession', () => {
         const replacement = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
         expect(replacement.participantId).not.toBe(alice.participantId)
     })
+
+    test('waitForUpdate resolves immediately when the revision is already ahead', async () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        const result = await session.waitForUpdate(alice.participantId, { sinceRevision: 0, timeoutMs: 1_000 })
+        expect(result.timedOut).toBe(false)
+        expect(result.state.stateRevision).toBeGreaterThan(0)
+    })
+
+    test('waitForUpdate resolves when a later event arrives', async () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const sinceRevision = session.getStateFor(alice.participantId).stateRevision
+
+        const pending = session.waitForUpdate(alice.participantId, { sinceRevision, timeoutMs: 5_000 })
+        session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        const result = await pending
+        expect(result.timedOut).toBe(false)
+        expect(result.state.stateRevision).toBeGreaterThan(sinceRevision)
+        expect(result.state.participants.some(participant => participant.name === 'Robert')).toBe(true)
+    })
+
+    test('waitForUpdate times out when nothing changes', async () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const sinceRevision = session.getStateFor(alice.participantId).stateRevision
+
+        const result = await session.waitForUpdate(alice.participantId, { sinceRevision, timeoutMs: 30 })
+        expect(result.timedOut).toBe(true)
+        expect(result.state.stateRevision).toBe(sinceRevision)
+    })
+
+    test('waitForUpdate with reveal-or-new-round ignores intermediate votes but resolves on reveal and round reset', async () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+        const sinceRevision = session.getStateFor(alice.participantId).stateRevision
+
+        const pending = session.waitForUpdate(alice.participantId, {
+            sinceRevision,
+            timeoutMs: 5_000,
+            until: 'reveal-or-new-round',
+        })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        const stillPending = await Promise.race([
+            pending.then(() => 'resolved'),
+            new Promise(resolve => setTimeout(() => resolve('pending'), 30)),
+        ])
+        expect(stillPending).toBe('pending')
+
+        const revealed = session.submitVote(bob.participantId, bob.roundId, '8')
+        expect(revealed.round.status).toBe('revealed')
+
+        const result = await pending
+        expect(result.timedOut).toBe(false)
+        expect(result.state.round.status).toBe('revealed')
+
+        const nextRevision = result.state.stateRevision
+        const roundPending = session.waitForUpdate(alice.participantId, {
+            sinceRevision: nextRevision,
+            timeoutMs: 5_000,
+            until: 'reveal-or-new-round',
+        })
+        session.resetRound(alice.participantId, 'Next story')
+        const roundResult = await roundPending
+        expect(roundResult.timedOut).toBe(false)
+        expect(roundResult.state.round.subject).toBe('Next story')
+    })
+
+    test('waitForUpdate renews the caller lease', async () => {
+        let now = 0
+        const session = createSession({ now: () => now })
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+
+        now = 60_000
+        const result = await session.waitForUpdate(alice.participantId, { sinceRevision: 0, timeoutMs: 1_000 })
+        expect(result.leaseExpiresAt).toBe(new Date(now + session.leaseDurationMs).toISOString())
+    })
+
+    test('waitForUpdate rejects for an unknown participantId', async () => {
+        const session = createSession()
+        await expect(session.waitForUpdate('unknown', { sinceRevision: 0, timeoutMs: 1_000 })).rejects.toThrowError(
+            expect.objectContaining({ code: 'invalid_participant_handle' }),
+        )
+    })
 })
