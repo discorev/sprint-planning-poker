@@ -151,11 +151,12 @@ function createPlanningPokerMcpServer(session: PlanningPokerSession, resourceUri
     server.registerTool(
         'wait_for_update',
         {
-            description: 'Long-poll for session changes: blocks until stateRevision advances past sinceRevision (optionally only until reveal or a new round), or until timeout. Renews the caller’s lease, so use it instead of heartbeat while waiting. On timedOut: true, call it again.',
+            description: 'Long-poll for session changes: blocks until stateRevision advances past sinceRevision (optionally only until reveal or a new round), or until timeout. timeoutSeconds defaults to 25 and cannot exceed 25. Renews the caller’s lease, so use it instead of heartbeat while waiting. timedOut: true means the requested wait condition was not met before the timeout; the response still includes the current state, which may have a newer stateRevision when intermediate changes were intentionally ignored. Always process the returned state before polling again.',
             inputSchema: z.object({
                 participantId: z.string().min(1),
                 sinceRevision: z.number().int().min(0).describe('The stateRevision from the last state the caller saw.'),
-                timeoutSeconds: z.number().int().min(1).max(25).optional(),
+                timeoutSeconds: z.number().int().min(1).max(25).optional()
+                    .describe('Long-poll timeout in seconds. Defaults to 25 and cannot exceed 25.'),
                 until: z.enum(['any-change', 'reveal-or-new-round']).optional()
                     .describe('Use \'reveal-or-new-round\' after voting to sleep through other participants’ individual votes.'),
             }),

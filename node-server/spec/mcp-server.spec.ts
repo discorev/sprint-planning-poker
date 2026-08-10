@@ -25,6 +25,7 @@ const envelope = {
 
 interface ToolDescription {
     readonly name: string
+    readonly description?: string
     readonly inputSchema?: {
         readonly properties?: Record<string, unknown>
         readonly required?: readonly string[]
@@ -133,6 +134,10 @@ describe('planning poker MCP endpoint', () => {
             'timeoutSeconds',
             'until',
         ])
+        const waitForUpdate = listedTools.find(tool => tool.name === 'wait_for_update')
+        expect(waitForUpdate?.description).toContain('timeoutSeconds defaults to 25 and cannot exceed 25')
+        expect(waitForUpdate?.description).toContain('the response still includes the current state')
+        expect(waitForUpdate?.description).toContain('Always process the returned state before polling again')
         expect(toolInputNames(listedTools, 'submit_vote')).toEqual([
             'card',
             'participantId',
