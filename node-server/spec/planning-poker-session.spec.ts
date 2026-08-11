@@ -262,12 +262,28 @@ describe('PlanningPokerSession', () => {
             choice: '5',
             rationale: 'Touches storage',
             selected: true,
+            disconnected: true,
         })
+        expect(session.getWebSocketPlayers().find(player => player.name === 'Robert')).not.toHaveProperty('disconnected')
 
         // The retained participant is now a ghost: further MCP calls under their old
         // handle are rejected, same as any other expired/unknown participant.
         expect(() => session.heartbeat(alice.participantId)).toThrowError(
             expect.objectContaining({ code: 'invalid_participant_handle' }),
+        )
+    })
+
+    test('rejects snoozing a retained ghost', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        session.submitVote(bob.participantId, bob.roundId, '8')
+        session.leaveMcpParticipant(alice.participantId)
+
+        expect(() => session.toggleSnoozeByName(bob.participantId, 'Alice')).toThrowError(
+            expect.objectContaining({ code: 'participant_disconnected' }),
         )
     })
 

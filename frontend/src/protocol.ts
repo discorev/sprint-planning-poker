@@ -6,6 +6,7 @@ export interface Player {
   readonly selected: boolean;
   readonly snoozed: boolean;
   readonly observer: boolean;
+  readonly disconnected: boolean;
 }
 
 export type ClientMessage =
@@ -103,5 +104,6 @@ export function toPlayer(value: unknown): Player | undefined {
     selected: value.selected === true,
     snoozed: value.snoozed === true,
     observer: value.observer === true,
+    disconnected: value.disconnected === true,
   };
 }

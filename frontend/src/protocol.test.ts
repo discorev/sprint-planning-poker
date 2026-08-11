@@ -39,6 +39,12 @@ describe('server protocol parsing', () => {
     expect(toPlayer({ name: 'Alice', rationale: 42 })).toMatchObject({ rationale: undefined });
   });
 
+  it('parses disconnected and defaults it to false otherwise', () => {
+    expect(toPlayer({ name: 'Alice', disconnected: true })).toMatchObject({ disconnected: true });
+    expect(toPlayer({ name: 'Alice' })).toMatchObject({ disconnected: false });
+    expect(toPlayer({ name: 'Alice', disconnected: 'yes' })).toMatchObject({ disconnected: false });
+  });
+
   it('accepts only non-empty, unique string card decks', () => {
     expect(messageCards({ cards: ['small', 'medium', 'large'] })).toEqual(['small', 'medium', 'large']);
     expect(messageCards({ cards: [] })).toBeUndefined();
@@ -62,11 +68,11 @@ describe('server protocol parsing', () => {
     };
 
     expect(messagePlayers(message)).toEqual([
-      { name: 'Alice', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false },
-      { name: 'Watcher', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: true },
+      { name: 'Alice', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
+      { name: 'Watcher', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: true, disconnected: false },
     ]);
     expect(messageChoices(message)).toEqual([
-      { name: 'Bob', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false },
+      { name: 'Bob', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false },
     ]);
     expect(messagePlayers({ players: 'invalid' })).toBeUndefined();
     expect(messageChoices({ choices: 'invalid' })).toBeUndefined();

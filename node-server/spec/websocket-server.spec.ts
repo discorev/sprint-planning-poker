@@ -341,7 +341,7 @@ describe('planning poker WebSocket adapter', () => {
         const afterLeave = await alice.next(message => Array.isArray(message.players), 'agent departure')
         expect(afterLeave.reset).toBeUndefined()
         expect(afterLeave.players).toEqual(expect.arrayContaining([
-            expect.objectContaining({ name: 'Agent', choice: '3', rationale: 'Touches storage' }),
+            expect.objectContaining({ name: 'Agent', choice: '3', rationale: 'Touches storage', disconnected: true }),
         ]))
 
         alice.socket.send(JSON.stringify({ action: 'reset' }))

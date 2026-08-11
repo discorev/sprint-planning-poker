@@ -53,7 +53,8 @@ function playerEquals(left: Player, right: Player): boolean {
     && left.rationale === right.rationale
     && left.selected === right.selected
     && left.snoozed === right.snoozed
-    && left.observer === right.observer;
+    && left.observer === right.observer
+    && left.disconnected === right.disconnected;
 }
 
 function replacePlayersWithSharing(
@@ -134,6 +135,7 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
           selected: message.selected === true,
           snoozed: false,
           observer: false,
+          disconnected: false,
         }];
     if (players !== next.players) {
       next = { ...next, players };
@@ -191,6 +193,7 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
           rationale: choice.rationale,
           selected: choice.choice !== undefined,
           snoozed: choice.snoozed,
+          disconnected: choice.disconnected,
         }));
       } else {
         players = [...players, { ...choice, selected: true }];

@@ -65,6 +65,7 @@ export interface WebSocketPlayerState {
     readonly selected: boolean
     readonly snoozed: boolean
     readonly observer: boolean
+    readonly disconnected?: boolean
 }
 
 export type PlanningPokerEvent =
@@ -400,6 +401,7 @@ export class PlanningPokerSession {
                 selected: vote !== undefined,
                 snoozed: participant.snoozed,
                 observer: participant.observer,
+                ...(participant.disconnected && { disconnected: true }),
             }
         })
     }
@@ -451,6 +453,9 @@ export class PlanningPokerSession {
     }
 
     private toggleSnoozeFor(participant: Participant, target: Participant): void {
+        if (target.disconnected) {
+            throw new PlanningPokerError('participant_disconnected', 'cannot snooze a disconnected participant')
+        }
         this.renewLease(participant)
         target.snoozed = !target.snoozed
         const revealed = this.revealIfComplete()
