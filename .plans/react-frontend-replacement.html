@@ -1,0 +1,437 @@
+<title>React Frontend Replacement Plan</title>
+<style>
+  :root {
+    --paper: #faf9f5;
+    --card: #fffefb;
+    --ink: #28241f;
+    --muted: #6f685f;
+    --line: #ded8ce;
+    --soft-line: #ebe6dd;
+    --clay: #d97757;
+    --clay-dark: #a94e34;
+    --clay-soft: #f7e5dc;
+    --olive: #788c5d;
+    --olive-soft: #edf1e7;
+    --gold: #b38a3e;
+    --shadow: 0 14px 40px rgba(67, 53, 38, 0.07);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: 'Avenir Next', Avenir, 'Gill Sans', sans-serif;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 4%, rgba(217, 119, 87, 0.08), transparent 28rem),
+      linear-gradient(rgba(76, 61, 45, 0.018) 1px, transparent 1px),
+      var(--paper);
+    background-size: auto, 100% 2rem, auto;
+    font-family: var(--sans);
+    line-height: 1.55;
+  }
+
+  .page { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 44px 0 72px; }
+  .masthead {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(32px, 7vw, 76px);
+    border: 1px solid var(--line);
+    border-radius: 3px 3px 28px 3px;
+    background: rgba(255, 254, 251, 0.92);
+    box-shadow: var(--shadow);
+  }
+  .masthead::after {
+    content: '13 → ⚛';
+    position: absolute;
+    right: -0.04em;
+    bottom: -0.34em;
+    color: rgba(217, 119, 87, 0.075);
+    font: 700 clamp(7rem, 20vw, 17rem)/1 var(--serif);
+    letter-spacing: -0.08em;
+    pointer-events: none;
+  }
+  .eyebrow {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0 0 18px;
+    color: var(--clay-dark);
+    font: 700 0.74rem/1.2 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .eyebrow::before { content: ''; width: 28px; height: 2px; background: var(--clay); }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.025em; }
+  h1 { position: relative; z-index: 1; max-width: 820px; margin: 0; font-size: clamp(3rem, 7.8vw, 6.7rem); line-height: 0.92; }
+  h1 em { color: var(--clay-dark); font-weight: 500; }
+  .deck { position: relative; z-index: 1; max-width: 720px; margin: 30px 0 0; color: var(--muted); font-size: clamp(1rem, 2vw, 1.25rem); }
+  .chips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 34px; }
+  .chip { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font: 700 0.7rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+  .chip.good { border-color: #cbd5be; color: #53633d; background: var(--olive-soft); }
+  .chip.warn { border-color: #e7c2b4; color: var(--clay-dark); background: var(--clay-soft); }
+
+  .snapshot { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; margin: 22px 0 58px; }
+  .snapshot-card { padding: 26px; border: 1px solid var(--line); background: var(--card); }
+  .snapshot-card:first-child { border-radius: 3px 3px 3px 22px; }
+  .snapshot-card:last-child { border-radius: 3px 3px 22px 3px; }
+  .snapshot h2 { margin: 0 0 11px; font-size: 1.65rem; }
+  .snapshot p { margin: 0; color: var(--muted); }
+  .statline { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 20px; }
+  .stat strong { display: block; color: var(--clay-dark); font: 500 2rem/1 var(--serif); }
+  .stat span { color: var(--muted); font: 700 0.66rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; }
+
+  section { margin-top: 62px; }
+  .section-head { display: grid; grid-template-columns: 88px 1fr; gap: 18px; align-items: start; margin-bottom: 25px; }
+  .section-letter { color: var(--clay); font: italic 4.5rem/0.8 var(--serif); }
+  .section-head h2 { margin: 0 0 6px; font-size: clamp(2rem, 4.2vw, 3.8rem); line-height: 1; }
+  .section-head p { max-width: 700px; margin: 0; color: var(--muted); }
+
+  .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .decision {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+    padding: 26px;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--clay);
+    border-radius: 3px 3px 18px 3px;
+    background: var(--card);
+    box-shadow: 0 8px 22px rgba(67, 53, 38, 0.035);
+  }
+  .decision.weak { border-top-color: var(--gold); }
+  .decision .number { color: var(--clay-dark); font: 700 0.72rem/1 var(--mono); letter-spacing: 0.1em; }
+  .decision h3 { margin: 12px 0 10px; font-size: 1.72rem; line-height: 1.08; }
+  .decision > p { margin: 0 0 18px; color: var(--muted); }
+  .pick { margin-top: auto; padding: 15px; border-left: 3px solid var(--olive); background: var(--olive-soft); }
+  .pick b, .alternative b { display: block; margin-bottom: 5px; font: 700 0.68rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+  .pick b { color: #53633d; }
+  .alternative { margin-top: 10px; padding: 14px; border: 1px dashed var(--line); color: var(--muted); background: var(--paper); }
+  .alternative b { color: var(--clay-dark); }
+  .why { margin-top: 12px; font-size: 0.9rem; color: var(--muted); }
+
+  .callout { display: grid; grid-template-columns: auto 1fr; gap: 16px; margin: 24px 0; padding: 22px; border: 1px solid #e6c6b9; border-left: 6px solid var(--clay); background: var(--clay-soft); }
+  .callout .mark { font: 500 2.4rem/1 var(--serif); color: var(--clay-dark); }
+  .callout h3 { margin: 0 0 5px; font-size: 1.35rem; }
+  .callout p { margin: 0; color: #684a3f; }
+
+  .architecture { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 10px; margin-top: 26px; }
+  .arch-box { padding: 22px 17px; border: 1px solid var(--line); border-radius: 3px 3px 14px 3px; background: var(--card); }
+  .arch-box strong { display: block; margin-bottom: 7px; font-family: var(--serif); font-size: 1.22rem; }
+  .arch-box span { color: var(--muted); font-size: 0.88rem; }
+  .arrow { align-self: center; color: var(--clay); font: 500 2rem/1 var(--serif); }
+
+  .sequence { counter-reset: phase; display: grid; gap: 12px; }
+  .phase {
+    counter-increment: phase;
+    display: grid;
+    grid-template-columns: 68px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 22px;
+    border: 1px solid var(--line);
+    background: var(--card);
+  }
+  .phase:first-child { border-radius: 18px 3px 3px 3px; }
+  .phase:last-child { border-radius: 3px 3px 18px 3px; }
+  .phase-num::before { content: '0' counter(phase); color: var(--clay-dark); font: 500 2rem/1 var(--serif); }
+  .phase h3 { margin: 0 0 3px; font-size: 1.35rem; }
+  .phase p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .gate { max-width: 220px; padding: 10px 12px; border-radius: 999px; color: #53633d; background: var(--olive-soft); font: 700 0.65rem/1.3 var(--mono); text-align: center; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .parity-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+  .parity-item { padding: 18px; border: 1px solid var(--soft-line); background: rgba(255, 254, 251, 0.72); }
+  .parity-item b { display: block; margin-bottom: 5px; font-family: var(--serif); font-size: 1.08rem; }
+  .parity-item span { color: var(--muted); font-size: 0.88rem; }
+  .check { color: var(--olive); font-weight: 800; }
+
+  details { border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
+  summary { cursor: pointer; padding: 24px 26px; font-family: var(--serif); font-size: 1.45rem; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; float: right; color: var(--clay); }
+  details[open] summary::after { content: '−'; }
+  .details-body { padding: 0 26px 28px; border-top: 1px solid var(--soft-line); }
+  .work-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+  .work { padding: 17px; border-left: 3px solid var(--line); background: var(--paper); }
+  .work b { font-family: var(--serif); }
+  .work ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; }
+  code { padding: 0.12em 0.35em; border: 1px solid var(--soft-line); background: #f3f0e9; font-family: var(--mono); font-size: 0.86em; }
+
+  .risks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .risk { display: grid; grid-template-columns: auto 1fr; gap: 13px; padding: 19px; border: 1px solid var(--line); background: var(--card); }
+  .risk .severity { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: var(--clay-dark); background: var(--clay-soft); font: 700 0.7rem/1 var(--mono); }
+  .risk h3 { margin: 0 0 4px; font-size: 1.12rem; }
+  .risk p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+
+  .not-doing { display: flex; flex-wrap: wrap; gap: 9px; }
+  .no-pill { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); font-size: 0.86rem; }
+  .no-pill::before { content: '× '; color: var(--clay-dark); font-weight: 800; }
+
+  .tweak { margin-top: 62px; padding: clamp(26px, 5vw, 48px); border: 1px solid #cbd5be; border-radius: 3px 3px 24px 3px; background: var(--olive-soft); }
+  .tweak h2 { margin: 0 0 8px; font-size: clamp(2rem, 4vw, 3.1rem); }
+  .tweak > p { margin: 0 0 22px; color: #5f6b4d; }
+  .reply { margin: 8px 0; padding: 13px 15px; border: 1px solid #cbd5be; background: rgba(255,255,255,0.58); font-family: var(--mono); font-size: 0.84rem; overflow-x: auto; }
+  footer { margin-top: 28px; color: var(--muted); font: 0.72rem/1.5 var(--mono); text-align: center; }
+
+  @media (max-width: 840px) {
+    .snapshot, .decision-grid, .risks, .work-grid { grid-template-columns: 1fr; }
+    .architecture { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); justify-self: center; }
+    .parity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .phase { grid-template-columns: 52px 1fr; }
+    .gate { grid-column: 2; justify-self: start; }
+  }
+  @media (max-width: 560px) {
+    .page { width: min(100% - 20px, 1160px); padding-top: 10px; }
+    .masthead { padding: 28px 22px 38px; }
+    .section-head { grid-template-columns: 54px 1fr; }
+    .section-letter { font-size: 3.2rem; }
+    .parity-grid { grid-template-columns: 1fr; }
+    .phase { grid-template-columns: 1fr; }
+    .gate { grid-column: 1; }
+  }
+</style>
+
+<main class="page">
+  <header class="masthead">
+    <p class="eyebrow">Migration plan · frontend only</p>
+    <h1>Same poker table.<br><em>Different engine.</em></h1>
+    <p class="deck">Replace the Angular 13 client with a small, typed React application while preserving the current screens, WebSocket protocol, subpath deployment, reconnect behavior, and round mechanics.</p>
+    <div class="chips">
+      <span class="chip good">Small surface · 3 components</span>
+      <span class="chip">Estimated effort · 3–5 focused days</span>
+      <span class="chip">Primary risk · parity, not scale</span>
+      <span class="chip warn">No implementation yet</span>
+    </div>
+  </header>
+
+  <div class="snapshot">
+    <article class="snapshot-card">
+      <p class="eyebrow">What the repository says</p>
+      <h2>This is a rewrite, but not a large one.</h2>
+      <p>The frontend is a single state-driven page with no meaningful routing: registration, a fixed card deck, player cards, reveal/reset, snoozing, observer mode, reconnect feedback, and confetti when active players agree.</p>
+      <div class="statline">
+        <div class="stat"><strong>3</strong><span>UI components</span></div>
+        <div class="stat"><strong>2</strong><span>services</span></div>
+        <div class="stat"><strong>0</strong><span>real routes</span></div>
+        <div class="stat"><strong>4</strong><span>client actions</span></div>
+      </div>
+    </article>
+    <article class="snapshot-card">
+      <p class="eyebrow">Scope boundary</p>
+      <h2>Frontend replacement only.</h2>
+      <p>The <code>node-server</code> and <code>sam-server</code> implementations remain protocol-compatible and unchanged. React must meet the existing servers where they are; changing the wire format would turn a contained migration into a cross-stack project.</p>
+    </article>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">A</div>
+      <div>
+        <p class="eyebrow">Judgment calls first</p>
+        <h2>Decisions worth changing now</h2>
+        <p>These choices shape the migration. Each has a recommended pick and a real alternative rather than burying product and engineering decisions inside implementation detail.</p>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <article class="decision weak">
+        <span class="number">DECISION 01 · WEAKEST POINT</span>
+        <h3>Deployment-free E2E is the parity contract</h3>
+        <p>Skaffold cannot currently build the legacy frontend, but the live deployment at <code>ollies.dev/sprint-planning-poker/</code> remains available as a visual and interaction reference. Automated parity checks must still require no deployment.</p>
+        <div class="pick"><b>Confirmed direction</b>Capture a small set of reference states from the live app during implementation, then have Playwright start the real <code>node-server</code> and local Vite preview through its <code>webServer</code> configuration. CI and local E2E remain fully self-contained.</div>
+        <div class="alternative"><b>Maintenance boundary</b>The live deployment is an acceptance oracle, not a test dependency. Keep a compact behavioral suite—not a hosted-environment check or brittle screenshot matrix—with one complete round plus focused observer, rejected-registration, and reconnect scenarios.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 02 · STATE</span>
+        <h3>A reducer, not a state library</h3>
+        <p>The application has one shared player list and a handful of round fields. Even a burst of WebSocket activity for 6–7 players changes only a tiny in-memory array and a small DOM; the risk comes from careless reference churn, not message volume at this scale.</p>
+        <div class="pick"><b>Plan’s pick</b>Use a typed <code>useReducer</code> at the app boundary with structural sharing: preserve unchanged player objects, replace only changed players, memoize <code>PlayerCard</code>, and pass stable callbacks. Messages remain ordered and immediate; no throttling or lossy coalescing.</div>
+        <div class="alternative"><b>Scale trigger</b>Introduce an external store only if the product grows into large rooms or several independently updating screens. Zustand would then provide selector-based subscriptions without changing the wire protocol.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 03 · WEBSOCKET</span>
+        <h3>Native WebSocket state machine</h3>
+        <p>RxJS currently wraps one connection and several Subjects. React does not need that dependency to preserve retry, registration confirmation, message forwarding, and reconnect registration.</p>
+        <div class="pick"><b>Plan’s pick</b>A small typed <code>PlanningPokerSocket</code> class plus <code>usePlanningPokerSocket</code> hook. Reconnect after one second, retain the registered name, and re-register on open exactly as today.</div>
+        <div class="alternative"><b>Lowest-diff alternative</b>Keep RxJS and port the services almost line-for-line. This reduces conceptual change but retains an otherwise unnecessary runtime dependency and service pattern.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 04 · STYLING</span>
+        <h3>Retire Bootstrap 4 and jQuery</h3>
+        <p>The current Bootstrap grid and modal are the main source of legacy frontend coupling. Keeping them would leave the React app dependent on global scripts and imperative DOM calls.</p>
+        <div class="pick"><b>Confirmed direction</b>Recreate the current appearance with Tailwind utilities and a small theme-token layer—no CSS Modules or bespoke component stylesheets. Retain FontAwesome Pro and standardize its credential on <code>FONTAWESOME_PACKAGE_TOKEN</code> across local builds, Docker, Skaffold, and CI.</div>
+        <div class="alternative"><b>Styling boundary</b>Use arbitrary Tailwind values only where the existing UI requires them, such as the 2.5:3.5 card ratio. Do not introduce a parallel custom-CSS component system or carry Bootstrap into the React app.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 05 · CUTOVER</span>
+        <h3>Replace <code>frontend/</code> in place</h3>
+        <p>The app is too small to justify a strangler setup, and dead Angular code must not remain on the live branch.</p>
+        <div class="pick"><b>Confirmed direction</b>On the migration branch, replace the contents of <code>frontend/</code> atomically with the React app. Reviewable commits may stage protocol, UI, tests, and deployment, but every commit intended for the live branch contains one frontend implementation—not Angular and React side by side.</div>
+        <div class="alternative"><b>Rollback mechanism</b>Rollback is Git history or the previous container image, not a second source tree. No <code>react-frontend/</code>, compatibility shell, or retained Angular build enters <code>main</code>.</div>
+      </article>
+
+      <article class="decision">
+        <span class="number">DECISION 06 · TOOLCHAIN</span>
+        <h3>Vite + React + TypeScript + Bun</h3>
+        <p>There is no SSR, routing, or framework-specific backend integration. A meta-framework would be unnecessary. The frontend’s current npm lockfile can be replaced as part of the toolchain reset.</p>
+        <div class="pick"><b>Plan’s pick</b>Use current stable React, Vite, Tailwind, strict TypeScript, Bun, Vitest, Testing Library, and Playwright. Pin the runtime version in CI and Docker rather than inheriting Node 16.</div>
+        <div class="alternative"><b>Conservative alternative</b>Use pnpm with Node LTS if keeping the entire repository on one JavaScript runtime/package-manager family matters more than frontend build speed.</div>
+      </article>
+    </div>
+
+    <div class="callout">
+      <div class="mark">!</div>
+      <div>
+        <h3>The protocol parser must preserve independent branch order.</h3>
+        <p>Server messages are structurally distinguished and may contain overlapping fields. The current handler applies <code>name/selected</code>, then <code>players</code>, then snooze, reset, and choices as separate <code>if</code> blocks. The React implementation should encode and test that exact order rather than “cleaning it up” into mutually exclusive cases.</p>
+      </div>
+    </div>
+
+    <div class="architecture" aria-label="Proposed frontend architecture">
+      <div class="arch-box"><strong>React components</strong><span>Register · CardDeck · PlayerCard · ConnectionModal</span></div>
+      <div class="arrow">→</div>
+      <div class="arch-box"><strong>App reducer + hook</strong><span>Round state, player state, typed message application, outbound actions</span></div>
+      <div class="arrow">↔</div>
+      <div class="arch-box"><strong>WebSocket adapter</strong><span>Native socket, one-second retry, registration handshake, reconnect</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">B</div>
+      <div>
+        <p class="eyebrow">Sequencing</p>
+        <h2>Build the safety net before the table</h2>
+        <p>The sequence is designed so the uncertain parts—protocol and parity—are proved before the Angular application is removed.</p>
+      </div>
+    </div>
+
+    <div class="sequence">
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Freeze the behavior contract</h3><p>Use the live deployment for visible states and interaction details, backed by the Angular components, existing specs, and Node server messages. Record the small set of browser scenarios the React replacement must pass.</p></div>
+        <div class="gate">Gate · observable behavior documented</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Scaffold the React toolchain</h3><p>Replace Angular build configuration with Vite, strict TypeScript, Bun, Vitest, Testing Library, aliases, environment typing, subpath base, and test setup.</p></div>
+        <div class="gate">Gate · blank production build serves at subpath</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Port protocol and state first</h3><p>Define client/server message types, structural guards, the pure app reducer, the socket adapter, reconnect logic, and registration persistence. Port the substantial WebSocket tests before UI work.</p></div>
+        <div class="gate">Gate · protocol unit tests match Angular semantics</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Rebuild the four UI pieces</h3><p>Implement registration, card deck, player card, and declarative connection modal. Port component tests and recreate only the CSS actually used by the application.</p></div>
+        <div class="gate">Gate · component behavior and accessibility pass</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Exercise real multiplayer flows locally</h3><p>Playwright starts Vite and the Node server itself—no Skaffold or deployment. Multiple browser contexts cover a complete round, observer behavior, rejected registration, and reconnect; narrower unit/component tests cover the combinatorial edges.</p></div>
+        <div class="gate">Gate · one-command local parity suite green</div>
+      </article>
+      <article class="phase">
+        <div class="phase-num"></div>
+        <div><h3>Restore container and Skaffold builds</h3><p>Replace both frontend Dockerfiles, standardize FontAwesome authentication on <code>FONTAWESOME_PACKAGE_TOKEN</code>, copy Vite’s real <code>dist</code> output, retain port 4200, and keep the development WebSocket proxy at <code>/api/ws</code>. Remove Angular and all obsolete configuration rather than retaining it.</p></div>
+        <div class="gate">Gate · Skaffold builds with the session token</div>
+      </article>
+    </div>
+
+    <div class="parity-grid">
+      <div class="parity-item"><b><span class="check">✓</span> Registration</b><span>Minimum three characters, duplicate-name error, observer choice, successful transition.</span></div>
+      <div class="parity-item"><b><span class="check">✓</span> Card selection</b><span>Fixed deck, one active choice, toggling, disabled after reveal.</span></div>
+      <div class="parity-item"><b><span class="check">✓</span> Player state</b><span>Selected indicator, revealed value, observer marker, snooze and wake-up behavior.</span></div>
+      <div class="parity-item"><b><span class="check">✓</span> Round lifecycle</b><span>Reveal when all active players choose, reset card, clear choices, new round.</span></div>
+      <div class="parity-item"><b><span class="check">✓</span> Connection</b><span>Blocking connecting modal, one-second retry, automatic re-registration.</span></div>
+      <div class="parity-item"><b><span class="check">✓</span> Celebration</b><span>Confetti once per round when at least two active players agree.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">C</div>
+      <div>
+        <p class="eyebrow">Mechanical work</p>
+        <h2>The “trust me” checklist</h2>
+        <p>Detailed file-level work is collapsed because these steps should follow from the decisions above rather than drive them.</p>
+      </div>
+    </div>
+
+    <details>
+      <summary>Open the implementation checklist</summary>
+      <div class="details-body">
+        <div class="work-grid">
+          <div class="work"><b>Toolchain</b><ul><li>Replace Angular scripts and dependencies in <code>frontend/package.json</code></li><li>Add Vite config with <code>/sprint-planning-poker/</code> production base</li><li>Retain <code>@app/*</code> alias or simplify imports consistently</li><li>Add strict TS project references for app and tests</li></ul></div>
+          <div class="work"><b>Protocol types</b><ul><li>Type four client actions</li><li>Type known server field combinations without <code>any</code></li><li>Add narrow structural guards for overlapping messages</li><li>Test combined-field branch ordering</li></ul></div>
+          <div class="work"><b>Socket lifecycle</b><ul><li>Derive <code>ws:</code>/<code>wss:</code> URL from the current host</li><li>Use dev <code>/api/ws</code> and prod <code>/sprint-planning-poker/ws</code></li><li>Retry one second after close/error</li><li>Preserve successful name and re-register on reconnect</li><li>Clear persisted name after rejected registration and on final teardown</li></ul></div>
+          <div class="work"><b>React UI</b><ul><li>Keep screen structure and copy unchanged</li><li>Use semantic buttons instead of clickable anchors where behavior allows</li><li>Preserve observer restrictions and choice locking</li><li>Render the modal declaratively from connection state</li></ul></div>
+          <div class="work"><b>Styling</b><ul><li>Configure Tailwind through Vite with a minimal theme-token layer</li><li>Recreate container, card, grid, modal, spinner, and responsive states with utilities</li><li>Preserve the 2.5:3.5 card ratio and responsive 1/5-column layout</li><li>Retain FontAwesome Pro; verify focus, disabled, and mobile states</li></ul></div>
+          <div class="work"><b>Testing</b><ul><li>Port service/model specs to pure unit tests</li><li>Port components to Testing Library user-level assertions</li><li>Add fake-timer reconnect tests</li><li>Add Playwright multi-context scenarios against <code>node-server</code></li></ul></div>
+          <div class="work"><b>CI and container</b><ul><li>Move frontend CI off Node 16 and <code>npm ci</code></li><li>Rename FontAwesome auth to <code>FONTAWESOME_PACKAGE_TOKEN</code> in <code>.npmrc</code>, both Dockerfiles, Skaffold, and CI</li><li>Copy Vite output from the actual <code>dist</code> directory</li><li>Run the compact E2E suite without Kubernetes, then smoke-test the nginx image</li></ul></div>
+          <div class="work"><b>Deletion</b><ul><li>Remove Angular module/components/services after React parity</li><li>Remove Angular CLI, Karma, Jasmine, Protractor and TSLint files</li><li>Remove Bootstrap 4, jQuery, Popper, RxJS and Zone.js if plan picks stand</li><li>Remove stale environment file replacement config</li></ul></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">D</div>
+      <div>
+        <p class="eyebrow">Risks and containment</p>
+        <h2>Where parity could quietly slip</h2>
+      </div>
+    </div>
+    <div class="risks">
+      <article class="risk"><div class="severity">H</div><div><h3>Overlapping protocol fields</h3><p>Contain with a pure, order-preserving message reducer and fixtures copied from both frontend tests and Node server broadcasts.</p></div></article>
+      <article class="risk"><div class="severity">H</div><div><h3>Reconnect identity</h3><p>Contain with fake-timer unit tests plus a browser test that terminates the connection, waits for retry, and verifies automatic registration.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>Subpath deployment</h3><p>Contain by testing built assets and WebSocket URLs under <code>/sprint-planning-poker/</code>, not only Vite’s root development URL.</p></div></article>
+      <article class="risk"><div class="severity">M</div><div><h3>Visual drift after Bootstrap removal</h3><p>Contain with a short set of baseline screenshots at desktop and mobile widths, while allowing accessibility-preserving semantic markup changes.</p></div></article>
+      <article class="risk"><div class="severity">L</div><div><h3>E2E maintenance cost</h3><p>Contain by testing a few durable user journeys through roles and visible outcomes, not implementation details or full-page pixel snapshots. Run locally and in CI with Playwright-managed processes, never a deployment.</p></div></article>
+      <article class="risk"><div class="severity">L</div><div><h3>Confetti API typing</h3><p>Use the library’s typed default API and isolate it behind a tiny celebration function; do not copy the existing <code>@ts-ignore</code>.</p></div></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="section-letter">E</div>
+      <div>
+        <p class="eyebrow">Deliberate exclusions</p>
+        <h2>Not part of this migration</h2>
+      </div>
+    </div>
+    <div class="not-doing">
+      <span class="no-pill">Backend protocol redesign</span>
+      <span class="no-pill">New room or session model</span>
+      <span class="no-pill">Visual redesign</span>
+      <span class="no-pill">Authentication</span>
+      <span class="no-pill">Angular-to-latest upgrade</span>
+      <span class="no-pill">SSR or Next.js</span>
+      <span class="no-pill">Repository-wide package-manager migration</span>
+      <span class="no-pill">AWS/SAM infrastructure changes</span>
+    </div>
+  </section>
+
+  <aside class="tweak">
+    <p class="eyebrow">Review shortcut</p>
+    <h2>Tweak these three things</h2>
+    <p>If the defaults look right, approval can be as short as “go with the picks.” Otherwise, any of these one-line replies changes the plan cleanly.</p>
+    <div class="reply">Keep Bootstrap CSS for the first React release; remove it later.</div>
+    <div class="reply">Use pnpm + Node LTS instead of Bun.</div>
+    <div class="reply">Skip Playwright parity tests and keep this as a unit-test + manual migration.</div>
+  </aside>
+
+  <footer>Prepared from the current Angular frontend, its tests, CI configuration, and the Node WebSocket protocol · 9 August 2026</footer>
+</main>

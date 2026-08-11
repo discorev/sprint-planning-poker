@@ -7,7 +7,7 @@ This project implements sprint planning poker using a WebSocket based api. This 
 ```
 .
 ├── README.md              <-- This instructions file
-├── frontend               <-- Angular based frontend website
+├── frontend               <-- React and Vite frontend website
 ├── node-server            <-- nodejs WebSocket server use for rapid development
 └── sam-server             <-- Serverless WebSocket implementation
 ```

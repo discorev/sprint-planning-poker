@@ -17,7 +17,7 @@ build:
       docker:
         dockerfile: Dockerfile.dev
         buildArgs:
-          FONTAWESOME_NPM_TOKEN: "{{ .FONTAWESOME_NPM_TOKEN }}"
+          FONTAWESOME_PACKAGE_TOKEN: "{{ .FONTAWESOME_PACKAGE_TOKEN }}"
       sync:
         manual:
           - src: "src/**/*.*"
