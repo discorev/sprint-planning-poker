@@ -35,7 +35,7 @@ export const PlayerCard = memo(function PlayerCard({ player, onSnooze }: PlayerC
             <span className="sr-only">observer</span>
           </span>
         )}
-        <h5 className="mb-3 text-xl font-medium leading-tight">
+        <h5 className={`mb-3 text-xl font-medium leading-tight ${player.disconnected ? 'text-[#a09a9a]' : ''}`}>
           <span aria-hidden="true" className={`fal ${player.type === 'agent' ? 'fa-microchip-ai' : 'fa-user'}`} />{' '}
           {player.name}
           <span className="sr-only">{player.type === 'agent' ? 'ai player' : 'human player'}</span>

@@ -155,6 +155,7 @@ describe('PlayerCard', () => {
     expect(screen.getByText('disconnected player Ghost')).toBeInTheDocument();
     expect(screen.getByText('disconnected player Ghost').parentElement).toHaveClass('text-red-500');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Ghost/ })).toHaveClass('text-[#a09a9a]');
   });
 
   it('shows the observer marker instead of snooze', () => {
