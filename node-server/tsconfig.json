@@ -6,8 +6,10 @@
     "moduleResolution": "node",
     "pretty": true,
     "sourceMap": true,
+    "strict": true,
     "target": "es2022",
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "outDir": "./dist"
   },
   "include": ["./src/**/*"],

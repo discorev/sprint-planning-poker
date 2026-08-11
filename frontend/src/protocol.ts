@@ -1,16 +1,20 @@
 export interface Player {
   readonly name: string;
+  readonly type: 'user' | 'agent';
   readonly choice: string | undefined;
+  readonly rationale: string | undefined;
   readonly selected: boolean;
   readonly snoozed: boolean;
   readonly observer: boolean;
+  readonly disconnected: boolean;
 }
 
 export type ClientMessage =
   | { readonly action: 'register'; readonly name: string; readonly observer?: boolean }
   | { readonly action: 'record-choice'; readonly choice?: string }
   | { readonly action: 'reset' }
-  | { readonly action: 'snooze'; readonly player: string };
+  | { readonly action: 'snooze'; readonly player: string }
+  | { readonly action: 'set-subject'; readonly subject: string };
 
 export type ServerMessage = Readonly<Record<string, unknown>>;
 
@@ -35,6 +39,23 @@ export function messageError(message: ServerMessage): string | undefined {
   return typeof message.error === 'string' ? message.error : undefined;
 }
 
+export function messageCards(message: ServerMessage): readonly string[] | undefined {
+  if (!Array.isArray(message.cards) || message.cards.length === 0) {
+    return undefined;
+  }
+
+  const cards: string[] = [];
+  const uniqueCards = new Set<string>();
+  for (const card of message.cards) {
+    if (typeof card !== 'string' || card.length === 0 || uniqueCards.has(card)) {
+      return undefined;
+    }
+    cards.push(card);
+    uniqueCards.add(card);
+  }
+  return cards;
+}
+
 export function hasSelectionUpdate(
   message: ServerMessage,
 ): message is ServerMessage & { readonly name: string; readonly selected: unknown } {
@@ -54,6 +75,13 @@ export function messagePlayers(message: ServerMessage): readonly Player[] | unde
     }
   }
   return players;
+}
+
+export function messageSubject(message: ServerMessage): string | null | undefined {
+  if (!Object.hasOwn(message, 'subject')) {
+    return undefined;
+  }
+  return typeof message.subject === 'string' ? message.subject : null;
 }
 
 export function messageChoices(message: ServerMessage): readonly Player[] | undefined {
@@ -78,9 +106,12 @@ export function toPlayer(value: unknown): Player | undefined {
 
   return {
     name: value.name,
+    type: value.type === 'agent' ? 'agent' : 'user',
     choice: typeof value.choice === 'string' ? value.choice : undefined,
+    rationale: typeof value.rationale === 'string' ? value.rationale : undefined,
     selected: value.selected === true,
     snoozed: value.snoozed === true,
     observer: value.observer === true,
+    disconnected: value.disconnected === true,
   };
 }

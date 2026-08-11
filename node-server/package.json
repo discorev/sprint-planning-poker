@@ -8,16 +8,20 @@
         "directory": "node-server"
     },
     "dependencies": {
-        "redis": "^4.2.0",
-        "ws": "^8.8.1"
+        "@modelcontextprotocol/node": "^2.0.0",
+        "@modelcontextprotocol/server": "^2.0.0",
+        "ws": "^8.8.1",
+        "zod": "^4.4.3"
     },
+    "packageManager": "pnpm@11.9.0",
     "scripts": {
         "dev": "nodemon",
         "start": "node index.js",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "build": "tsc",
+        "typecheck": "tsc --project tsconfig.spec.json",
+        "build": "tsc --project tsconfig.json",
         "get-version": "echo $npm_package_version"
     },
     "devDependencies": {

@@ -3,6 +3,7 @@ import { CardDeck } from './components/CardDeck';
 import { ConnectionModal } from './components/ConnectionModal';
 import { PlayerCard } from './components/PlayerCard';
 import { Register } from './components/Register';
+import { RoundSubject } from './components/RoundSubject';
 import { celebrate } from './celebrate';
 import { usePlanningPokerSocket } from './socket/use-planning-poker-socket';
 import { appReducer, initialAppState } from './state/app-state';
@@ -50,6 +51,10 @@ export function App() {
     socket.send({ action: 'reset' });
   }, [socket]);
 
+  const setSubject = useCallback((subject: string) => {
+    socket.setSubject(subject);
+  }, [socket]);
+
   const self = state.players.find((player) => player.name === state.name);
   const isObserver = self?.observer === true;
 
@@ -68,11 +73,12 @@ export function App() {
         />
       ) : (
         <main className="mx-auto mt-[10px] w-full max-w-[1140px] px-3">
+          <RoundSubject onCommit={setSubject} subject={state.subject} />
           {!isObserver ? (
             <section className="mb-2 rounded border border-black/15 bg-white">
               <h2 className="mb-0 border-b border-black/15 bg-black/[0.03] px-5 py-3 text-base font-normal">Your Choice</h2>
               <div className="p-5">
-                <CardDeck disabled={state.showReset} onChoose={choose} selection={state.selection} />
+                <CardDeck cards={state.cards} disabled={state.showReset} onChoose={choose} selection={state.selection} />
               </div>
             </section>
           ) : null}

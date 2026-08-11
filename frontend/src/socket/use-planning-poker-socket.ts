@@ -6,6 +6,7 @@ import { PlanningPokerSocket, planningPokerSocketUrl } from './planning-poker-so
 export interface PlanningPokerSocketControls {
   readonly register: (name: string, observer: boolean) => void;
   readonly send: (message: ClientMessage) => void;
+  readonly setSubject: (subject: string) => void;
 }
 
 export function usePlanningPokerSocket(dispatch: Dispatch<AppAction>): PlanningPokerSocketControls {
@@ -39,5 +40,9 @@ export function usePlanningPokerSocket(dispatch: Dispatch<AppAction>): PlanningP
     socketRef.current?.send(message);
   }, []);
 
-  return useMemo(() => ({ register, send }), [register, send]);
+  const setSubject = useCallback((subject: string) => {
+    socketRef.current?.send({ action: 'set-subject', subject });
+  }, []);
+
+  return useMemo(() => ({ register, send, setSubject }), [register, send, setSubject]);
 }

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { CardDeck, CARDS } from './CardDeck';
+import { CardDeck } from './CardDeck';
 import { ConnectionModal } from './ConnectionModal';
 import { PlayerCard } from './PlayerCard';
 import { Register } from './Register';
+import { RoundSubject } from './RoundSubject';
 
 describe('Register', () => {
   it('validates the name, captures observer mode, and submits', async () => {
@@ -75,22 +76,23 @@ describe('Register', () => {
 });
 
 describe('CardDeck', () => {
-  it('renders the fixed deck and toggles choices through the parent', async () => {
+  it('renders server-provided cards in order and toggles choices through the parent', async () => {
     const user = userEvent.setup();
     const onChoose = vi.fn<(choice: string) => void>();
-    render(<CardDeck disabled={false} onChoose={onChoose} selection="3" />);
+    const cards = ['server-small', 'server-medium', 'server-large'];
+    render(<CardDeck cards={cards} disabled={false} onChoose={onChoose} selection="server-medium" />);
 
-    expect(screen.getAllByRole('button')).toHaveLength(CARDS.length);
-    const chosen = screen.getByRole('button', { name: '3' });
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(cards);
+    const chosen = screen.getByRole('button', { name: 'server-medium' });
     expect(chosen).toHaveAttribute('aria-pressed', 'true');
     expect(chosen).toHaveClass('bg-white', 'text-[#212529]', 'border-[#007bff]');
     expect(chosen).not.toHaveClass('bg-[#007bff]', 'text-white');
     await user.click(chosen);
-    expect(onChoose).toHaveBeenCalledWith('3');
+    expect(onChoose).toHaveBeenCalledWith('server-medium');
   });
 
   it('locks every choice after reveal', () => {
-    render(<CardDeck disabled onChoose={() => undefined} />);
+    render(<CardDeck cards={['1', '2']} disabled onChoose={() => undefined} />);
     screen.getAllByRole('button').forEach((button) => expect(button).toBeDisabled());
   });
 });
@@ -102,7 +104,7 @@ describe('PlayerCard', () => {
     const { container } = render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Alice', choice: '8', selected: true, snoozed: false, observer: false }}
+        player={{ name: 'Alice', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false }}
       />,
     );
 
@@ -110,8 +112,21 @@ describe('PlayerCard', () => {
     expect(screen.getByText('active player').parentElement).toHaveClass('text-[#d8d8d8]');
     expect(screen.getByText('active player').parentElement).not.toHaveClass('text-fuchsia-500');
     expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.queryByText(/rationale:/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /snooze player Alice/i }));
     expect(onSnooze).toHaveBeenCalledWith('Alice');
+  });
+
+  it('shows a rationale icon when a player provides one', () => {
+    render(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Alice', type: 'agent', choice: '8', rationale: 'Touches storage', selected: true, snoozed: false, observer: false, disconnected: false }}
+      />,
+    );
+
+    expect(screen.getByTitle('Touches storage')).toBeInTheDocument();
+    expect(screen.getByText('rationale: Touches storage')).toBeInTheDocument();
   });
 
   it('shows snoozed players and lets them be woken', async () => {
@@ -120,7 +135,7 @@ describe('PlayerCard', () => {
     render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Bob', choice: undefined, selected: false, snoozed: true, observer: false }}
+        player={{ name: 'Bob', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: false, disconnected: false }}
       />,
     );
 
@@ -130,15 +145,101 @@ describe('PlayerCard', () => {
     expect(onSnooze).toHaveBeenCalledWith('Bob');
   });
 
+  it('shows a disconnected marker instead of snooze and renders no button', () => {
+    render(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Ghost', type: 'user', choice: '5', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: true }}
+      />,
+    );
+
+    expect(screen.getByText('disconnected player Ghost')).toBeInTheDocument();
+    expect(screen.getByText('disconnected player Ghost').parentElement).toHaveClass('text-red-500');
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Ghost/ })).toHaveClass('text-[#a09a9a]');
+  });
+
   it('shows the observer marker instead of snooze', () => {
     render(
       <PlayerCard
         onSnooze={() => undefined}
-        player={{ name: 'Observer', choice: undefined, selected: false, snoozed: false, observer: true }}
+        player={{ name: 'Observer', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: true, disconnected: false }}
       />,
     );
     expect(screen.getByText('observer')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('labels participants as ai or human user for screen readers', () => {
+    const { rerender } = render(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Agent', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false }}
+      />,
+    );
+    expect(screen.getByText('ai player')).toBeInTheDocument();
+    expect(screen.queryByText('human player')).not.toBeInTheDocument();
+
+    rerender(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Human', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false }}
+      />,
+    );
+    expect(screen.getByText('human player')).toBeInTheDocument();
+    expect(screen.queryByText('ai player')).not.toBeInTheDocument();
+  });
+});
+
+describe('RoundSubject', () => {
+  it('renders the server value and commits an edit on Enter', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    expect(input).toHaveValue('Login flow');
+    await user.clear(input);
+    await user.type(input, 'Signup flow{Enter}');
+    expect(onCommit).toHaveBeenCalledWith('Signup flow');
+  });
+
+  it('commits on blur and skips the callback when nothing changed', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    render(
+      <>
+        <RoundSubject onCommit={onCommit} subject="Login flow" />
+        <button type="button">elsewhere</button>
+      </>,
+    );
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    await user.click(input);
+    await user.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(onCommit).not.toHaveBeenCalled();
+
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, 'Signup flow');
+    await user.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(onCommit).toHaveBeenCalledWith('Signup flow');
+  });
+
+  it('does not clobber a focused draft when the server value changes', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    const { rerender } = render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, 'Mid-edit draft');
+
+    rerender(<RoundSubject onCommit={onCommit} subject="Server update" />);
+
+    expect(input).toHaveValue('Mid-edit draft');
+    expect(input).toHaveFocus();
   });
 });
 

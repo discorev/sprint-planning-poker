@@ -24,7 +24,7 @@ test('completes and resets a matching multiplayer round', async ({ browser }) =>
   await register(alice, 'Alice');
   await register(bob, 'Bob');
   await expect(alice.getByRole('heading', { name: 'Your Choice' })).toBeVisible();
-  await expect(alice.getByText('Bob', { exact: true })).toBeVisible();
+  await expect(alice.getByRole('heading', { name: 'Bob' })).toBeVisible();
 
   await alice.getByRole('button', { name: '5' }).click();
   await bob.getByRole('button', { name: '5' }).click();
@@ -97,11 +97,11 @@ test('reconnects and automatically restores registration', async ({ page }) => {
     window.addEventListener('__test_disconnect_socket', () => sockets.at(-1)?.close());
   });
   await register(page, 'Reconnect Alice');
-  await expect(page.getByText('Reconnect Alice', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reconnect Alice' })).toBeVisible();
 
   await page.evaluate(() => window.dispatchEvent(new Event('__test_disconnect_socket')));
   await expect(page.getByRole('dialog')).toContainText('Connecting...');
 
   await expect(page.getByRole('dialog')).toBeHidden({ timeout: 5_000 });
-  await expect(page.getByText('Reconnect Alice', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reconnect Alice' })).toBeVisible();
 });

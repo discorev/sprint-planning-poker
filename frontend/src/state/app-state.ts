@@ -1,7 +1,11 @@
+import { LEGACY_REGISTRATION_CARD_FALLBACK } from '../legacy-card-deck';
 import {
   hasSelectionUpdate,
+  messageCards,
   messageChoices,
+  messageError,
   messagePlayers,
+  messageSubject,
   type Player,
   type ServerMessage,
 } from '../protocol';
@@ -17,7 +21,9 @@ export interface AppState {
   readonly showReset: boolean;
   readonly confettiFired: boolean;
   readonly celebrationCount: number;
+  readonly cards: readonly string[];
   readonly players: readonly Player[];
+  readonly subject?: string;
 }
 
 export type AppAction =
@@ -38,15 +44,19 @@ export const initialAppState: AppState = {
   showReset: false,
   confettiFired: false,
   celebrationCount: 0,
+  cards: LEGACY_REGISTRATION_CARD_FALLBACK,
   players: [],
 };
 
 function playerEquals(left: Player, right: Player): boolean {
   return left.name === right.name
+    && left.type === right.type
     && left.choice === right.choice
+    && left.rationale === right.rationale
     && left.selected === right.selected
     && left.snoozed === right.snoozed
-    && left.observer === right.observer;
+    && left.observer === right.observer
+    && left.disconnected === right.disconnected;
 }
 
 function replacePlayersWithSharing(
@@ -103,7 +113,22 @@ export function allActivePlayersAgree(players: readonly Player[]): boolean {
 function applyServerMessage(state: AppState, message: ServerMessage): AppState {
   let next = state;
 
+  if (message.action === 'register' && !messageError(message)) {
+    const cards = messageCards(message);
+    if (cards) {
+      next = { ...next, cards };
+    }
+  }
+
   // These branches intentionally remain independent and ordered to match the legacy client.
+  const subject = messageSubject(message);
+  if (subject !== undefined) {
+    const nextSubject = subject ?? undefined;
+    if (next.subject !== nextSubject) {
+      next = { ...next, subject: nextSubject };
+    }
+  }
+
   if (hasSelectionUpdate(message)) {
     const existing = next.players.some((player) => player.name === message.name);
     const players = existing
@@ -114,10 +139,13 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
         }))
       : [...next.players, {
           name: message.name,
+          type: 'user' as const,
           choice: undefined,
+          rationale: undefined,
           selected: message.selected === true,
           snoozed: false,
           observer: false,
+          disconnected: false,
         }];
     if (players !== next.players) {
       next = { ...next, players };
@@ -144,10 +172,10 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
 
   if (message.reset) {
     const resetPlayers = next.players.map((player) => {
-      if (player.choice === undefined && !player.selected) {
+      if (player.choice === undefined && player.rationale === undefined && !player.selected) {
         return player;
       }
-      return { ...player, choice: undefined, selected: false };
+      return { ...player, choice: undefined, rationale: undefined, selected: false };
     });
     const players = resetPlayers.every((player, index) => player === next.players[index])
       ? next.players
@@ -172,8 +200,10 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
         players = updatePlayer(players, choice.name, (player) => ({
           ...player,
           choice: choice.choice,
+          rationale: choice.rationale,
           selected: choice.choice !== undefined,
           snoozed: choice.snoozed,
+          disconnected: choice.disconnected,
         }));
       } else {
         players = [...players, { ...choice, selected: true }];

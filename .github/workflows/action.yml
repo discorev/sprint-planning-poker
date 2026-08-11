@@ -4,7 +4,28 @@ on:
   - pull_request
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/action.yml'
+            server:
+              - 'node-server/**'
+              - '.github/workflows/action.yml'
   frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,17 +69,24 @@ jobs:
         with:
           directory: ./frontend
   server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ./node-server/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
+          cache-dependency-path: ./node-server/pnpm-lock.yaml
       - name: install & test
         working-directory: ./node-server
         run: |
-          npm ci
-          npm test
+          pnpm install --frozen-lockfile
+          pnpm test
       - uses: codecov/codecov-action@v5
         with:
           directory: ./node-server

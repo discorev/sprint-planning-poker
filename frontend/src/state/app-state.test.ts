@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { LEGACY_REGISTRATION_CARD_FALLBACK } from '../legacy-card-deck';
 import type { Player } from '../protocol';
 import { allActivePlayersAgree, appReducer, initialAppState, type AppState } from './app-state';
 
 const players: readonly Player[] = [
-  { name: 'one', choice: undefined, selected: false, snoozed: false, observer: false },
-  { name: 'two', choice: undefined, selected: false, snoozed: false, observer: false },
+  { name: 'one', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false },
+  { name: 'two', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false },
 ];
 
 function state(overrides: Partial<AppState> = {}): AppState {
@@ -36,6 +37,33 @@ describe('appReducer', () => {
     });
   });
 
+  it('uses valid server cards from successful registration', () => {
+    const cards = ['server-small', 'server-medium', 'server-large'];
+    const result = appReducer(initialAppState, {
+      type: 'server-message',
+      message: { action: 'register', cards },
+    });
+
+    expect(result.cards).toEqual(cards);
+    expect(result.cards).not.toBe(LEGACY_REGISTRATION_CARD_FALLBACK);
+  });
+
+  it('keeps the legacy fallback for omitted, malformed, and failed registration decks', () => {
+    const registrations = [
+      { action: 'register' },
+      { action: 'register', cards: [] },
+      { action: 'register', cards: ['1', '1'] },
+      { action: 'register', cards: ['1', ''] },
+      { action: 'register', cards: ['1', 2] },
+      { action: 'register', cards: ['server-card'], error: 'name is already taken' },
+    ];
+
+    for (const message of registrations) {
+      const result = appReducer(initialAppState, { type: 'server-message', message });
+      expect(result.cards).toBe(LEGACY_REGISTRATION_CARD_FALLBACK);
+    }
+  });
+
   it('returns the same state for a duplicate connection update', () => {
     const current = state({ connected: true });
     expect(appReducer(current, { type: 'connection-changed', connected: true })).toBe(current);
@@ -47,20 +75,52 @@ describe('appReducer', () => {
       message: {
         name: 'temporary',
         selected: true,
-        players: [{ name: 'one', choice: null, snoozed: false, observer: false }],
+        players: [{ name: 'one', choice: null, snoozed: false, observer: false, disconnected: false }],
         action: 'snooze',
         player: 'one',
         snoozed: true,
         reset: true,
-        choices: [{ name: 'one', choice: '5', snoozed: false, observer: false }],
+        choices: [{ name: 'one', choice: '5', snoozed: false, observer: false, disconnected: false }],
       },
     });
 
     expect(result.players).toEqual([
-      { name: 'one', choice: '5', selected: true, snoozed: false, observer: false },
+      { name: 'one', type: 'user', choice: '5', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
     ]);
     expect(result.selection).toBeUndefined();
     expect(result.showReset).toBe(true);
+  });
+
+  it('merges revealed rationales onto existing players from a choices message', () => {
+    const result = appReducer(state(), {
+      type: 'server-message',
+      message: {
+        choices: [
+          { name: 'one', choice: '5', rationale: 'Touches storage', snoozed: false, observer: false, disconnected: false },
+          { name: 'two', choice: '8', snoozed: false, observer: false, disconnected: false },
+        ],
+      },
+    });
+
+    expect(result.players).toEqual([
+      { name: 'one', type: 'user', choice: '5', rationale: 'Touches storage', selected: true, snoozed: false, observer: false, disconnected: false },
+      { name: 'two', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
+    ]);
+  });
+
+  it('carries disconnected through the choices merge for retained ghosts', () => {
+    const result = appReducer(state(), {
+      type: 'server-message',
+      message: {
+        choices: [
+          { name: 'one', choice: '5', snoozed: false, observer: false, disconnected: true },
+          { name: 'two', choice: '8', snoozed: false, observer: false, disconnected: false },
+        ],
+      },
+    });
+
+    expect(result.players[0]).toMatchObject({ name: 'one', disconnected: true });
+    expect(result.players[1]).toMatchObject({ name: 'two', disconnected: false });
   });
 
   it('adds selection updates for unknown players and wakes known players', () => {
@@ -79,10 +139,13 @@ describe('appReducer', () => {
 
     expect(withUnknown.players.at(-1)).toEqual({
       name: 'three',
+      type: 'user',
       choice: undefined,
+      rationale: undefined,
       selected: true,
       snoozed: false,
       observer: false,
+      disconnected: false,
     });
     expect(withKnown.players[0]).toEqual({ ...players[0], snoozed: false });
   });
@@ -93,8 +156,8 @@ describe('appReducer', () => {
       type: 'server-message',
       message: {
         players: [
-          { name: 'two', choice: null, snoozed: false, observer: false },
-          { name: 'one', choice: '3', snoozed: false, observer: false },
+          { name: 'two', choice: null, snoozed: false, observer: false, disconnected: false },
+          { name: 'one', choice: '3', snoozed: false, observer: false, disconnected: false },
         ],
       },
     });
@@ -108,8 +171,8 @@ describe('appReducer', () => {
     const current = state();
     const message = {
       players: [
-        { name: 'one', choice: null, snoozed: false, observer: false },
-        { name: 'two', choice: null, snoozed: false, observer: false },
+        { name: 'one', choice: null, snoozed: false, observer: false, disconnected: false },
+        { name: 'two', choice: null, snoozed: false, observer: false, disconnected: false },
       ],
       reset: true,
     };
@@ -134,10 +197,10 @@ describe('appReducer', () => {
     expect(result.players[1]).toBe(current.players[1]);
   });
 
-  it('resets choices without changing snooze and observer state', () => {
+  it('resets choices and rationale without changing snooze and observer state', () => {
     const currentPlayers: readonly Player[] = [
-      { name: 'one', choice: '3', selected: true, snoozed: true, observer: false },
-      { name: 'watcher', choice: undefined, selected: false, snoozed: false, observer: true },
+      { name: 'one', type: 'user', choice: '3', rationale: 'Touches storage', selected: true, snoozed: true, observer: false, disconnected: false },
+      { name: 'watcher', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: true, disconnected: false },
     ];
     const result = appReducer(state({ players: currentPlayers, showReset: true, confettiFired: true }), {
       type: 'server-message',
@@ -145,7 +208,7 @@ describe('appReducer', () => {
     });
 
     expect(result.players).toEqual([
-      { name: 'one', choice: undefined, selected: false, snoozed: true, observer: false },
+      { name: 'one', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: false, disconnected: false },
       currentPlayers[1],
     ]);
     expect(result.players[1]).toBe(currentPlayers[1]);
@@ -155,9 +218,9 @@ describe('appReducer', () => {
   it('reveals choices, adds missing players, and fires celebration once per round', () => {
     const choices = {
       choices: [
-        { name: 'one', choice: '5', snoozed: false, observer: false },
-        { name: 'two', choice: '5', snoozed: false, observer: false },
-        { name: 'watcher', choice: undefined, snoozed: false, observer: true },
+        { name: 'one', choice: '5', snoozed: false, observer: false, disconnected: false },
+        { name: 'two', choice: '5', snoozed: false, observer: false, disconnected: false },
+        { name: 'watcher', choice: undefined, snoozed: false, observer: true, disconnected: false },
       ],
     };
     const first = appReducer(state(), { type: 'server-message', message: choices });
@@ -167,10 +230,13 @@ describe('appReducer', () => {
 
     expect(first.players.at(-1)).toEqual({
       name: 'watcher',
+      type: 'user',
       choice: undefined,
+      rationale: undefined,
       selected: true,
       snoozed: false,
       observer: true,
+      disconnected: false,
     });
     expect(first.showReset).toBe(true);
     expect(first.celebrationCount).toBe(1);
@@ -179,16 +245,61 @@ describe('appReducer', () => {
   });
 });
 
+describe('appReducer subject handling', () => {
+  it('sets and clears the subject from explicit message values', () => {
+    const set = appReducer(state(), {
+      type: 'server-message',
+      message: { subject: 'Login flow' },
+    });
+    expect(set.subject).toBe('Login flow');
+
+    const cleared = appReducer(set, {
+      type: 'server-message',
+      message: { subject: null },
+    });
+    expect(cleared.subject).toBeUndefined();
+  });
+
+  it('leaves the subject untouched when a message omits the field', () => {
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { name: 'one', selected: true },
+    });
+    expect(result.subject).toBe('Login flow');
+  });
+
+  it('keeps the subject on legacy reset flags that carry no subject field', () => {
+    // register and departure broadcasts set reset: true without being round resets;
+    // an actual round-reset broadcast always carries an explicit subject (or null).
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { reset: true },
+    });
+    expect(result.subject).toBe('Login flow');
+  });
+
+  it('keeps the subject a reset message explicitly carries', () => {
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { reset: true, subject: 'Signup flow' },
+    });
+    expect(result.subject).toBe('Signup flow');
+  });
+});
+
 describe('allActivePlayersAgree', () => {
   it('requires at least two non-observer, non-snoozed matching choices', () => {
     expect(allActivePlayersAgree([
-      { name: 'one', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'two', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'watcher', choice: '13', selected: true, snoozed: false, observer: true },
+      { name: 'one', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
+      { name: 'two', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
+      { name: 'watcher', type: 'user', choice: '13', rationale: undefined, selected: true, snoozed: false, observer: true, disconnected: false },
     ])).toBe(true);
     expect(allActivePlayersAgree([
-      { name: 'one', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'two', choice: '8', selected: true, snoozed: true, observer: false },
+      { name: 'one', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false },
+      { name: 'two', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: true, observer: false, disconnected: false },
     ])).toBe(false);
   });
 
