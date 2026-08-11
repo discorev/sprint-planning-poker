@@ -51,14 +51,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ./node-server/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: pnpm
+          cache-dependency-path: ./node-server/pnpm-lock.yaml
       - name: install & test
         working-directory: ./node-server
         run: |
-          npm ci
-          npm test
+          pnpm install --frozen-lockfile
+          pnpm test
       - uses: codecov/codecov-action@v5
         with:
           directory: ./node-server
