@@ -90,3 +90,49 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           directory: ./node-server
+  publish-server:
+    needs:
+      - changes
+      - server
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Read package version
+        id: version
+        run: echo "version=$(jq -r .version node-server/package.json)" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./node-server
+          push: true
+          tags: |
+            discorev/sprint-planning-poker-server:latest
+            discorev/sprint-planning-poker-server:${{ steps.version.outputs.version }}
+  publish-frontend:
+    needs:
+      - changes
+      - frontend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Read package version
+        id: version
+        run: echo "version=$(jq -r .version frontend/package.json)" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            FONTAWESOME_PACKAGE_TOKEN=${{ secrets.FONTAWESOME_PACKAGE_TOKEN || secrets.FONTAWESOME_NPM_TOKEN }}
+          tags: |
+            discorev/sprint-planning-poker-frontend:latest
+            discorev/sprint-planning-poker-frontend:${{ steps.version.outputs.version }}
