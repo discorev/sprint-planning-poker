@@ -74,6 +74,7 @@ interface StateToolResult {
     }
     readonly participants: readonly {
         readonly name: string
+        readonly type?: string
         readonly selected: boolean
         readonly snoozed?: boolean
     }[]
@@ -232,6 +233,7 @@ describe('planning poker MCP endpoint', () => {
         expect(bobState.ownVote).toBeUndefined()
         expect(bobState.votes).toBeUndefined()
         expect(bobState.participants.find(participant => participant.name === 'Alice')?.selected).toBe(true)
+        expect(bobState.participants.find(participant => participant.name === 'Alice')?.type).toBe('agent')
         expect(JSON.stringify(bobState)).not.toContain('participantId')
 
         await callTool(endpoint, 'submit_vote', {

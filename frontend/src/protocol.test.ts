@@ -27,6 +27,12 @@ describe('server protocol parsing', () => {
     expect(hasSelectionUpdate({ name: 'Alice' })).toBe(false);
   });
 
+  it('defaults type to user when missing or unrecognized', () => {
+    expect(toPlayer({ name: 'Alice' })).toMatchObject({ type: 'user' });
+    expect(toPlayer({ name: 'Alice', type: 'robot' })).toMatchObject({ type: 'user' });
+    expect(toPlayer({ name: 'Agent', type: 'agent' })).toMatchObject({ type: 'agent' });
+  });
+
   it('accepts only non-empty, unique string card decks', () => {
     expect(messageCards({ cards: ['small', 'medium', 'large'] })).toEqual(['small', 'medium', 'large']);
     expect(messageCards({ cards: [] })).toBeUndefined();
@@ -39,8 +45,8 @@ describe('server protocol parsing', () => {
   it('normalizes valid players while ignoring malformed entries', () => {
     const message = {
       players: [
-        { name: 'Alice', choice: '8', selected: true, snoozed: false, observer: false },
-        { name: 'Watcher', choice: 13, snoozed: true, observer: true },
+        { name: 'Alice', choice: '8', selected: true, snoozed: false, observer: false, type: 'user' },
+        { name: 'Watcher', choice: 13, snoozed: true, observer: true, type: 'agent' },
         { choice: '5' },
       ],
       choices: [
@@ -50,11 +56,11 @@ describe('server protocol parsing', () => {
     };
 
     expect(messagePlayers(message)).toEqual([
-      { name: 'Alice', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'Watcher', choice: undefined, selected: false, snoozed: true, observer: true },
+      { name: 'Alice', type: 'user', choice: '8', selected: true, snoozed: false, observer: false },
+      { name: 'Watcher', type: 'agent', choice: undefined, selected: false, snoozed: true, observer: true },
     ]);
     expect(messageChoices(message)).toEqual([
-      { name: 'Bob', choice: undefined, selected: false, snoozed: false, observer: false },
+      { name: 'Bob', type: 'user', choice: undefined, selected: false, snoozed: false, observer: false },
     ]);
     expect(messagePlayers({ players: 'invalid' })).toBeUndefined();
     expect(messageChoices({ choices: 'invalid' })).toBeUndefined();

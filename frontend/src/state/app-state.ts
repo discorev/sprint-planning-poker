@@ -48,6 +48,7 @@ export const initialAppState: AppState = {
 
 function playerEquals(left: Player, right: Player): boolean {
   return left.name === right.name
+    && left.type === right.type
     && left.choice === right.choice
     && left.selected === right.selected
     && left.snoozed === right.snoozed
@@ -126,6 +127,7 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
         }))
       : [...next.players, {
           name: message.name,
+          type: 'user' as const,
           choice: undefined,
           selected: message.selected === true,
           snoozed: false,

@@ -28,7 +28,9 @@ describe('PlanningPokerSession', () => {
         expect(publicState.round.status).toBe('voting')
         expect(publicState.ownVote).toBeUndefined()
         expect(publicState.participants.find(participant => participant.name === 'Alice')?.selected).toBe(true)
-        expect(session.getWebSocketPlayers().find(player => player.name === 'Alice')).toMatchObject({ selected: true })
+        expect(publicState.participants.find(participant => participant.name === 'Alice')?.type).toBe('user')
+        expect(publicState.participants.find(participant => participant.name === 'Carol')?.type).toBe('agent')
+        expect(session.getWebSocketPlayers().find(player => player.name === 'Alice')).toMatchObject({ selected: true, type: 'user' })
     })
 
     test('uses names publicly while hiding private handles and another participant vote until reveal', () => {

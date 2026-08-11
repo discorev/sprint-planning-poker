@@ -4,7 +4,12 @@ export const PLANNING_POKER_CARDS = ['?', '1', '2', '3', '5', '8', '13', '21'] a
 
 export type PlanningPokerCard = typeof PLANNING_POKER_CARDS[number]
 export type ParticipantTransport = 'websocket' | 'mcp'
+export type ParticipantType = 'user' | 'agent'
 export type RoundStatus = 'voting' | 'revealed'
+
+function participantTypeFor(transport: ParticipantTransport): ParticipantType {
+    return transport === 'mcp' ? 'agent' : 'user'
+}
 
 interface Participant {
     readonly participantId: string
@@ -27,6 +32,7 @@ interface Vote {
 
 export interface PublicParticipant {
     readonly name: string
+    readonly type: ParticipantType
     readonly observer: boolean
     readonly snoozed: boolean
     readonly selected: boolean
@@ -52,6 +58,7 @@ export interface PlanningPokerState {
 
 export interface WebSocketPlayerState {
     readonly name: string
+    readonly type: ParticipantType
     readonly choice?: string
     readonly selected: boolean
     readonly snoozed: boolean
@@ -361,6 +368,7 @@ export class PlanningPokerSession {
             const vote = this.votes.get(participant.participantId)
             return {
                 name: participant.name,
+                type: participantTypeFor(participant.transport),
                 ...(this.roundStatus === 'revealed' && vote && { choice: vote.card }),
                 selected: vote !== undefined,
                 snoozed: participant.snoozed,
@@ -373,6 +381,7 @@ export class PlanningPokerSession {
         const ownVote = viewerId ? this.votes.get(viewerId) : undefined
         const participants = [...this.participants.values()].map(participant => ({
             name: participant.name,
+            type: participantTypeFor(participant.transport),
             observer: participant.observer,
             snoozed: participant.snoozed,
             selected: this.votes.has(participant.participantId),

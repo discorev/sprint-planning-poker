@@ -1,5 +1,6 @@
 export interface Player {
   readonly name: string;
+  readonly type: 'user' | 'agent';
   readonly choice: string | undefined;
   readonly selected: boolean;
   readonly snoozed: boolean;
@@ -95,6 +96,7 @@ export function toPlayer(value: unknown): Player | undefined {
 
   return {
     name: value.name,
+    type: value.type === 'agent' ? 'agent' : 'user',
     choice: typeof value.choice === 'string' ? value.choice : undefined,
     selected: value.selected === true,
     snoozed: value.snoozed === true,

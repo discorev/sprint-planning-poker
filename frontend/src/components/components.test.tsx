@@ -103,7 +103,7 @@ describe('PlayerCard', () => {
     const { container } = render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Alice', choice: '8', selected: true, snoozed: false, observer: false }}
+        player={{ name: 'Alice', type: 'user', choice: '8', selected: true, snoozed: false, observer: false }}
       />,
     );
 
@@ -121,7 +121,7 @@ describe('PlayerCard', () => {
     render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Bob', choice: undefined, selected: false, snoozed: true, observer: false }}
+        player={{ name: 'Bob', type: 'user', choice: undefined, selected: false, snoozed: true, observer: false }}
       />,
     );
 
@@ -135,11 +135,31 @@ describe('PlayerCard', () => {
     render(
       <PlayerCard
         onSnooze={() => undefined}
-        player={{ name: 'Observer', choice: undefined, selected: false, snoozed: false, observer: true }}
+        player={{ name: 'Observer', type: 'user', choice: undefined, selected: false, snoozed: false, observer: true }}
       />,
     );
     expect(screen.getByText('observer')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('labels participants as ai or human user for screen readers', () => {
+    const { rerender } = render(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Agent', type: 'agent', choice: undefined, selected: false, snoozed: false, observer: false }}
+      />,
+    );
+    expect(screen.getByText('ai player')).toBeInTheDocument();
+    expect(screen.queryByText('human player')).not.toBeInTheDocument();
+
+    rerender(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Human', type: 'user', choice: undefined, selected: false, snoozed: false, observer: false }}
+      />,
+    );
+    expect(screen.getByText('human player')).toBeInTheDocument();
+    expect(screen.queryByText('ai player')).not.toBeInTheDocument();
   });
 });
 

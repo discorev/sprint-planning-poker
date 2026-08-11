@@ -28,7 +28,11 @@ export const PlayerCard = memo(function PlayerCard({ player, onSnooze }: PlayerC
             <span className="sr-only">observer</span>
           </span>
         )}
-        <h5 className="mb-3 text-xl font-medium leading-tight">{player.name}</h5>
+        <h5 className="mb-3 text-xl font-medium leading-tight">
+          <span aria-hidden="true" className={`fal ${player.type === 'agent' ? 'fa-microchip-ai' : 'fa-user'}`} />{' '}
+          {player.name}
+          <span className="sr-only">{player.type === 'agent' ? 'ai player' : 'human player'}</span>
+        </h5>
         <p className="mb-0">{player.choice ?? ' '}</p>
       </div>
     </div>

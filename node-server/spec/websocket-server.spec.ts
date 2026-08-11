@@ -26,6 +26,7 @@ interface ServerMessage {
 
 interface PlayerMessage {
     readonly name: string
+    readonly type?: string
     readonly choice?: string
     readonly selected?: boolean
     readonly snoozed?: boolean
@@ -91,8 +92,9 @@ describe('planning poker WebSocket adapter', () => {
         expect(joined.reset).toBeUndefined()
         expect(JSON.stringify(joined)).not.toContain('participantId')
         expect(JSON.stringify(joined)).not.toContain(agent.participantId)
-        expect(joined.players?.find(player => player.name === 'Alice')).toMatchObject({ selected: true })
+        expect(joined.players?.find(player => player.name === 'Alice')).toMatchObject({ selected: true, type: 'user' })
         expect(joined.players?.find(player => player.name === 'Alice')?.choice).toBeUndefined()
+        expect(joined.players?.find(player => player.name === 'Agent')?.type).toBe('agent')
 
         bob.socket.send(JSON.stringify({ action: 'record-choice', choice: '8' }))
         await alice.next(message => message.name === 'Robert' && message.selected === true)

@@ -4,8 +4,8 @@ import type { Player } from '../protocol';
 import { allActivePlayersAgree, appReducer, initialAppState, type AppState } from './app-state';
 
 const players: readonly Player[] = [
-  { name: 'one', choice: undefined, selected: false, snoozed: false, observer: false },
-  { name: 'two', choice: undefined, selected: false, snoozed: false, observer: false },
+  { name: 'one', type: 'user', choice: undefined, selected: false, snoozed: false, observer: false },
+  { name: 'two', type: 'user', choice: undefined, selected: false, snoozed: false, observer: false },
 ];
 
 function state(overrides: Partial<AppState> = {}): AppState {
@@ -85,7 +85,7 @@ describe('appReducer', () => {
     });
 
     expect(result.players).toEqual([
-      { name: 'one', choice: '5', selected: true, snoozed: false, observer: false },
+      { name: 'one', type: 'user', choice: '5', selected: true, snoozed: false, observer: false },
     ]);
     expect(result.selection).toBeUndefined();
     expect(result.showReset).toBe(true);
@@ -107,6 +107,7 @@ describe('appReducer', () => {
 
     expect(withUnknown.players.at(-1)).toEqual({
       name: 'three',
+      type: 'user',
       choice: undefined,
       selected: true,
       snoozed: false,
@@ -164,8 +165,8 @@ describe('appReducer', () => {
 
   it('resets choices without changing snooze and observer state', () => {
     const currentPlayers: readonly Player[] = [
-      { name: 'one', choice: '3', selected: true, snoozed: true, observer: false },
-      { name: 'watcher', choice: undefined, selected: false, snoozed: false, observer: true },
+      { name: 'one', type: 'user', choice: '3', selected: true, snoozed: true, observer: false },
+      { name: 'watcher', type: 'agent', choice: undefined, selected: false, snoozed: false, observer: true },
     ];
     const result = appReducer(state({ players: currentPlayers, showReset: true, confettiFired: true }), {
       type: 'server-message',
@@ -173,7 +174,7 @@ describe('appReducer', () => {
     });
 
     expect(result.players).toEqual([
-      { name: 'one', choice: undefined, selected: false, snoozed: true, observer: false },
+      { name: 'one', type: 'user', choice: undefined, selected: false, snoozed: true, observer: false },
       currentPlayers[1],
     ]);
     expect(result.players[1]).toBe(currentPlayers[1]);
@@ -195,6 +196,7 @@ describe('appReducer', () => {
 
     expect(first.players.at(-1)).toEqual({
       name: 'watcher',
+      type: 'user',
       choice: undefined,
       selected: true,
       snoozed: false,
@@ -210,13 +212,13 @@ describe('appReducer', () => {
 describe('allActivePlayersAgree', () => {
   it('requires at least two non-observer, non-snoozed matching choices', () => {
     expect(allActivePlayersAgree([
-      { name: 'one', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'two', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'watcher', choice: '13', selected: true, snoozed: false, observer: true },
+      { name: 'one', type: 'user', choice: '8', selected: true, snoozed: false, observer: false },
+      { name: 'two', type: 'user', choice: '8', selected: true, snoozed: false, observer: false },
+      { name: 'watcher', type: 'user', choice: '13', selected: true, snoozed: false, observer: true },
     ])).toBe(true);
     expect(allActivePlayersAgree([
-      { name: 'one', choice: '8', selected: true, snoozed: false, observer: false },
-      { name: 'two', choice: '8', selected: true, snoozed: true, observer: false },
+      { name: 'one', type: 'user', choice: '8', selected: true, snoozed: false, observer: false },
+      { name: 'two', type: 'user', choice: '8', selected: true, snoozed: true, observer: false },
     ])).toBe(false);
   });
 
