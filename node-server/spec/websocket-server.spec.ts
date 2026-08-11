@@ -48,7 +48,10 @@ describe('planning poker WebSocket adapter', () => {
     const sockets: WebSocket[] = []
 
     beforeEach(async () => {
-        server = createPlanningPokerServer({ webSocketHeartbeatIntervalMs: 25 })
+        // 250ms keeps the liveness test fast while tolerating event-loop
+        // stalls on loaded CI runners (a missed pong within one interval
+        // gets the socket terminated mid-test).
+        server = createPlanningPokerServer({ webSocketHeartbeatIntervalMs: 250 })
         const port = await server.listen(0, '127.0.0.1')
         url = `ws://127.0.0.1:${port}/api/ws`
         mcpEndpoint = `http://127.0.0.1:${port}/mcp`
@@ -237,7 +240,7 @@ describe('planning poker WebSocket adapter', () => {
         server = createPlanningPokerServer({
             leaseDurationMs: 40,
             leaseCleanupIntervalMs: 10,
-            webSocketHeartbeatIntervalMs: 25,
+            webSocketHeartbeatIntervalMs: 250,
         })
         const port = await server.listen(0, '127.0.0.1')
         url = `ws://127.0.0.1:${port}/api/ws`
