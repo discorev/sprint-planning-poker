@@ -33,7 +33,15 @@ export const PlayerCard = memo(function PlayerCard({ player, onSnooze }: PlayerC
           {player.name}
           <span className="sr-only">{player.type === 'agent' ? 'ai player' : 'human player'}</span>
         </h5>
-        <p className="mb-0">{player.choice ?? ' '}</p>
+        <p className="mb-0">
+          {player.choice ?? ' '}
+          {player.rationale ? (
+            <span className="ml-1 text-sm text-[#d8d8d8]" title={player.rationale}>
+              <i aria-hidden="true" className="fal fa-brain" />
+              <span className="sr-only">rationale: {player.rationale}</span>
+            </span>
+          ) : null}
+        </p>
       </div>
     </div>
   );

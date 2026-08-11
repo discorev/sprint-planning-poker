@@ -241,4 +241,95 @@ describe('PlanningPokerSession', () => {
             expect.objectContaining({ code: 'invalid_participant_handle' }),
         )
     })
+
+    test('retains a voter and their vote after a revealed-round departure, in both projections', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5', 'Touches storage')
+        const revealed = session.submitVote(bob.participantId, bob.roundId, '8')
+        expect(revealed.round.status).toBe('revealed')
+
+        expect(session.leaveMcpParticipant(alice.participantId)).toBe(true)
+
+        const publicState = session.getPublicState()
+        expect(publicState.participants.find(participant => participant.name === 'Alice')).toMatchObject({ selected: true })
+        expect(publicState.votes).toEqual(expect.arrayContaining([
+            { name: 'Alice', card: '5', rationale: 'Touches storage' },
+        ]))
+        expect(session.getWebSocketPlayers().find(player => player.name === 'Alice')).toMatchObject({
+            choice: '5',
+            rationale: 'Touches storage',
+            selected: true,
+        })
+
+        // The retained participant is now a ghost: further MCP calls under their old
+        // handle are rejected, same as any other expired/unknown participant.
+        expect(() => session.heartbeat(alice.participantId)).toThrowError(
+            expect.objectContaining({ code: 'invalid_participant_handle' }),
+        )
+    })
+
+    test('removes a voter immediately when they depart during voting, even though they had voted', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+        session.joinParticipant({ name: 'Carol', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        expect(session.getPublicState().round.status).toBe('voting')
+
+        expect(session.leaveMcpParticipant(alice.participantId)).toBe(true)
+        expect(session.getPublicState().participants.some(participant => participant.name === 'Alice')).toBe(false)
+    })
+
+    test('removes a non-voter (observer) immediately even after reveal', () => {
+        const session = createSession()
+        const observer = session.joinParticipant({ name: 'Observer', observer: true, transport: 'mcp' })
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        const revealed = session.submitVote(bob.participantId, bob.roundId, '8')
+        expect(revealed.round.status).toBe('revealed')
+
+        expect(session.leaveMcpParticipant(observer.participantId)).toBe(true)
+        expect(session.getPublicState().participants.some(participant => participant.name === 'Observer')).toBe(false)
+    })
+
+    test('purges disconnected participants when the round resets', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        session.submitVote(bob.participantId, bob.roundId, '8')
+        session.leaveMcpParticipant(alice.participantId)
+        expect(session.getPublicState().participants.some(participant => participant.name === 'Alice')).toBe(true)
+
+        const reset = session.resetRound(bob.participantId, 'Next story')
+        expect(reset.participants.some(participant => participant.name === 'Alice')).toBe(false)
+    })
+
+    test('rejoining with a disconnected ghost name evicts the ghost and succeeds', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        session.submitVote(alice.participantId, alice.roundId, '5')
+        session.submitVote(bob.participantId, bob.roundId, '8')
+        session.leaveMcpParticipant(alice.participantId)
+        expect(session.getPublicState().participants.some(participant => participant.name === 'Alice')).toBe(true)
+
+        const rejoined = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+        expect(rejoined.participantId).not.toBe(alice.participantId)
+        const state = session.getPublicState()
+        expect(state.participants.filter(participant => participant.name === 'Alice')).toHaveLength(1)
+        expect(state.participants.find(participant => participant.name === 'Alice')?.selected).toBe(false)
+
+        expect(() => session.joinParticipant({ name: 'Robert', transport: 'mcp' })).toThrowError(
+            expect.objectContaining({ code: 'name_taken' }),
+        )
+    })
 })

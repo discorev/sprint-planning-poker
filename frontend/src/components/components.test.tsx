@@ -103,7 +103,7 @@ describe('PlayerCard', () => {
     const { container } = render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Alice', type: 'user', choice: '8', selected: true, snoozed: false, observer: false }}
+        player={{ name: 'Alice', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false }}
       />,
     );
 
@@ -111,8 +111,21 @@ describe('PlayerCard', () => {
     expect(screen.getByText('active player').parentElement).toHaveClass('text-[#d8d8d8]');
     expect(screen.getByText('active player').parentElement).not.toHaveClass('text-fuchsia-500');
     expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.queryByText(/rationale:/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /snooze player Alice/i }));
     expect(onSnooze).toHaveBeenCalledWith('Alice');
+  });
+
+  it('shows a rationale icon when a player provides one', () => {
+    render(
+      <PlayerCard
+        onSnooze={() => undefined}
+        player={{ name: 'Alice', type: 'agent', choice: '8', rationale: 'Touches storage', selected: true, snoozed: false, observer: false }}
+      />,
+    );
+
+    expect(screen.getByTitle('Touches storage')).toBeInTheDocument();
+    expect(screen.getByText('rationale: Touches storage')).toBeInTheDocument();
   });
 
   it('shows snoozed players and lets them be woken', async () => {
@@ -121,7 +134,7 @@ describe('PlayerCard', () => {
     render(
       <PlayerCard
         onSnooze={onSnooze}
-        player={{ name: 'Bob', type: 'user', choice: undefined, selected: false, snoozed: true, observer: false }}
+        player={{ name: 'Bob', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: false }}
       />,
     );
 
@@ -135,7 +148,7 @@ describe('PlayerCard', () => {
     render(
       <PlayerCard
         onSnooze={() => undefined}
-        player={{ name: 'Observer', type: 'user', choice: undefined, selected: false, snoozed: false, observer: true }}
+        player={{ name: 'Observer', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: true }}
       />,
     );
     expect(screen.getByText('observer')).toBeInTheDocument();
@@ -146,7 +159,7 @@ describe('PlayerCard', () => {
     const { rerender } = render(
       <PlayerCard
         onSnooze={() => undefined}
-        player={{ name: 'Agent', type: 'agent', choice: undefined, selected: false, snoozed: false, observer: false }}
+        player={{ name: 'Agent', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false }}
       />,
     );
     expect(screen.getByText('ai player')).toBeInTheDocument();
@@ -155,7 +168,7 @@ describe('PlayerCard', () => {
     rerender(
       <PlayerCard
         onSnooze={() => undefined}
-        player={{ name: 'Human', type: 'user', choice: undefined, selected: false, snoozed: false, observer: false }}
+        player={{ name: 'Human', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false }}
       />,
     );
     expect(screen.getByText('human player')).toBeInTheDocument();

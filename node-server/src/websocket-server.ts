@@ -68,7 +68,7 @@ export function attachPlanningPokerWebSocketServer(
             case 'participant-left':
                 broadcast({
                     players: session.getWebSocketPlayers(),
-                    ...(event.transport === 'websocket' && { reset: true }),
+                    ...(event.transport === 'websocket' && !event.retained && { reset: true }),
                 })
                 if (event.revealed) {
                     broadcastChoices()
@@ -91,7 +91,13 @@ export function attachPlanningPokerWebSocketServer(
                 return
             }
             case 'round-reset':
-                broadcast({ reset: true, originator: session.getParticipantName(event.participantId) })
+                // Include players so any ghosts purged by the reset (see resetRoundFor)
+                // disappear from browser clients instead of lingering with cleared votes.
+                broadcast({
+                    reset: true,
+                    originator: session.getParticipantName(event.participantId),
+                    players: session.getWebSocketPlayers(),
+                })
                 return
             case 'participant-snoozed': {
                 const name = session.getParticipantName(event.participantId)

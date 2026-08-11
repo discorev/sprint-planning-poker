@@ -17,6 +17,7 @@ interface Participant {
     readonly observer: boolean
     readonly transport: ParticipantTransport
     snoozed: boolean
+    disconnected: boolean
     leaseExpiresAt?: number
 }
 
@@ -60,6 +61,7 @@ export interface WebSocketPlayerState {
     readonly name: string
     readonly type: ParticipantType
     readonly choice?: string
+    readonly rationale?: string
     readonly selected: boolean
     readonly snoozed: boolean
     readonly observer: boolean
@@ -67,7 +69,7 @@ export interface WebSocketPlayerState {
 
 export type PlanningPokerEvent =
     | { readonly type: 'participant-joined'; readonly participantId: string; readonly transport: ParticipantTransport }
-    | { readonly type: 'participant-left'; readonly participantId: string; readonly transport: ParticipantTransport; readonly revealed: boolean }
+    | { readonly type: 'participant-left'; readonly participantId: string; readonly transport: ParticipantTransport; readonly revealed: boolean; readonly retained: boolean }
     | { readonly type: 'participants-expired'; readonly participantIds: readonly string[]; readonly revealed: boolean }
     | { readonly type: 'vote-changed'; readonly participantId: string; readonly revealed: boolean }
     | { readonly type: 'round-reset'; readonly participantId: string }
@@ -148,8 +150,15 @@ export class PlanningPokerSession {
         if (name.length < 3) {
             throw new PlanningPokerError('name_too_short', 'name is too short')
         }
-        if (this.findParticipantByName(name)) {
-            throw new PlanningPokerError('name_taken', 'name is already taken')
+        const existing = this.findParticipantByName(name)
+        if (existing) {
+            if (!existing.disconnected) {
+                throw new PlanningPokerError('name_taken', 'name is already taken')
+            }
+            // A disconnected participant is a retained ghost from a revealed round;
+            // reclaiming their name evicts them so the join can proceed.
+            this.participants.delete(existing.participantId)
+            this.votes.delete(existing.participantId)
         }
 
         const participantId = this.nextId('participant')
@@ -159,6 +168,7 @@ export class PlanningPokerSession {
             name,
             observer: input.observer ?? false,
             snoozed: false,
+            disconnected: false,
             transport: input.transport,
             ...(leaseExpiresAt !== undefined && { leaseExpiresAt }),
         }
@@ -326,32 +336,48 @@ export class PlanningPokerSession {
     leaveParticipant(participantId: string): boolean {
         this.pruneExpiredParticipants()
         const participant = this.participants.get(participantId)
-        if (!participant) {
+        if (!participant || participant.disconnected) {
             return false
+        }
+        if (this.roundStatus === 'revealed' && this.votes.has(participantId)) {
+            // Keep the participant (and their vote) visible for discussion; a later
+            // round reset purges them, or rejoining under their name evicts the ghost.
+            participant.disconnected = true
+            this.changed({ type: 'participant-left', participantId, transport: participant.transport, revealed: false, retained: true })
+            return true
         }
         this.participants.delete(participantId)
         this.votes.delete(participantId)
         const revealed = this.revealIfComplete()
-        this.changed({ type: 'participant-left', participantId, transport: participant.transport, revealed })
+        this.changed({ type: 'participant-left', participantId, transport: participant.transport, revealed, retained: false })
         return true
     }
 
     pruneExpiredParticipants(): readonly string[] {
         const now = this.now()
-        const expired = [...this.participants.values()]
-            .filter(participant => participant.leaseExpiresAt !== undefined && participant.leaseExpiresAt <= now)
-            .map(participant => participant.participantId)
+        const candidates = [...this.participants.values()]
+            .filter(participant => !participant.disconnected && participant.leaseExpiresAt !== undefined && participant.leaseExpiresAt <= now)
 
-        if (expired.length === 0) {
-            return expired
+        if (candidates.length === 0) {
+            return []
         }
-        for (const participantId of expired) {
-            this.participants.delete(participantId)
-            this.votes.delete(participantId)
+        const removed: string[] = []
+        for (const participant of candidates) {
+            if (this.roundStatus === 'revealed' && this.votes.has(participant.participantId)) {
+                participant.disconnected = true
+            } else {
+                this.participants.delete(participant.participantId)
+                this.votes.delete(participant.participantId)
+                removed.push(participant.participantId)
+            }
         }
         const revealed = this.revealIfComplete()
-        this.changed({ type: 'participants-expired', participantIds: expired, revealed })
-        return expired
+        this.changed({
+            type: 'participants-expired',
+            participantIds: candidates.map(participant => participant.participantId),
+            revealed,
+        })
+        return removed
     }
 
     findParticipantIdByName(name: string): string | undefined {
@@ -370,6 +396,7 @@ export class PlanningPokerSession {
                 name: participant.name,
                 type: participantTypeFor(participant.transport),
                 ...(this.roundStatus === 'revealed' && vote && { choice: vote.card }),
+                ...(this.roundStatus === 'revealed' && vote?.rationale && { rationale: vote.rationale }),
                 selected: vote !== undefined,
                 snoozed: participant.snoozed,
                 observer: participant.observer,
@@ -413,6 +440,9 @@ export class PlanningPokerSession {
             throw new PlanningPokerError('round_not_revealed', 'the current round has not been revealed')
         }
         this.renewLease(participant)
+        for (const ghost of [...this.participants.values()].filter(candidate => candidate.disconnected)) {
+            this.participants.delete(ghost.participantId)
+        }
         this.votes.clear()
         this.roundId = this.nextId('round')
         this.roundSubject = subject?.trim() || undefined
@@ -435,7 +465,7 @@ export class PlanningPokerSession {
     private requireMcpParticipant(participantId: string): McpParticipant {
         this.pruneExpiredParticipants()
         const participant = this.participants.get(participantId)
-        if (participant?.transport !== 'mcp' || participant.leaseExpiresAt === undefined) {
+        if (participant?.transport !== 'mcp' || participant.leaseExpiresAt === undefined || participant.disconnected) {
             throw new PlanningPokerError(
                 'invalid_participant_handle',
                 'participantId is unknown, expired, or not managed by MCP; join the session again',

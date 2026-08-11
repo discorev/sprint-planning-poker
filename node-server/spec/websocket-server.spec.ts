@@ -28,6 +28,7 @@ interface PlayerMessage {
     readonly name: string
     readonly type?: string
     readonly choice?: string
+    readonly rationale?: string
     readonly selected?: boolean
     readonly snoozed?: boolean
     readonly observer?: boolean
@@ -121,6 +122,36 @@ describe('planning poker WebSocket adapter', () => {
         expect(await bob.next(message => message.action === 'snooze', 'MCP snooze')).toMatchObject({
             player: 'Agent',
             snoozed: true,
+        })
+    })
+
+    test('exposes an MCP vote rationale over WebSocket only after reveal', async () => {
+        const alice = await connect(url)
+        sockets.push(alice.socket)
+        alice.socket.send(JSON.stringify({ action: 'register', name: 'Alice' }))
+        await alice.next(message => message.action === 'register')
+
+        const agent = await callMcpTool<JoinedMcpParticipant>(
+            mcpEndpoint,
+            'join_session',
+            { name: 'Agent' },
+        )
+        await alice.next(message => message.players?.length === 2, 'MCP participant join')
+
+        await callMcpTool(mcpEndpoint, 'submit_vote', {
+            ...caller(agent),
+            roundId: agent.round.roundId,
+            card: '3',
+            rationale: 'Touches storage',
+        })
+        const hiddenVote = await alice.next(message => message.name === 'Agent' && message.selected === true)
+        expect(hiddenVote).toEqual({ name: 'Agent', selected: true })
+
+        alice.socket.send(JSON.stringify({ action: 'record-choice', choice: '5' }))
+        const reveal = await alice.next(message => Array.isArray(message.choices), 'automatic reveal')
+        expect(reveal.choices?.find(player => player.name === 'Agent')).toMatchObject({
+            choice: '3',
+            rationale: 'Touches storage',
         })
     })
 
@@ -276,6 +307,47 @@ describe('planning poker WebSocket adapter', () => {
             })
         })
         expect(server.session.getPublicState().participants).toEqual([])
+    })
+
+    test('retains a departed MCP voter and their rationale through a revealed round, then purges them on reset', async () => {
+        const alice = await connect(url)
+        sockets.push(alice.socket)
+        alice.socket.send(JSON.stringify({ action: 'register', name: 'Alice' }))
+        await alice.next(message => message.action === 'register')
+
+        const agent = await callMcpTool<JoinedMcpParticipant>(
+            mcpEndpoint,
+            'join_session',
+            { name: 'Agent' },
+        )
+        await alice.next(message => message.players?.length === 2, 'MCP participant join')
+
+        await callMcpTool(mcpEndpoint, 'submit_vote', {
+            ...caller(agent),
+            roundId: agent.round.roundId,
+            card: '3',
+            rationale: 'Touches storage',
+        })
+        alice.socket.send(JSON.stringify({ action: 'record-choice', choice: '5' }))
+        const reveal = await alice.next(message => Array.isArray(message.choices), 'automatic reveal')
+        expect(reveal.choices?.find(player => player.name === 'Agent')).toMatchObject({
+            choice: '3',
+            rationale: 'Touches storage',
+        })
+
+        const departure = await callMcpTool<{ code?: string }>(mcpEndpoint, 'leave_session', caller(agent))
+        expect(departure.code).toBeUndefined()
+
+        const afterLeave = await alice.next(message => Array.isArray(message.players), 'agent departure')
+        expect(afterLeave.reset).toBeUndefined()
+        expect(afterLeave.players).toEqual(expect.arrayContaining([
+            expect.objectContaining({ name: 'Agent', choice: '3', rationale: 'Touches storage' }),
+        ]))
+
+        alice.socket.send(JSON.stringify({ action: 'reset' }))
+        const resetMessage = await alice.next(message => message.reset === true, 'browser round reset')
+        expect(resetMessage.originator).toBe('Alice')
+        expect(resetMessage.players?.some(player => player.name === 'Agent')).toBe(false)
     })
 
     test('rejects WebSocket upgrades outside the allowlist', async () => {

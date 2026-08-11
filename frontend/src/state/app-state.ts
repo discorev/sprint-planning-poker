@@ -50,6 +50,7 @@ function playerEquals(left: Player, right: Player): boolean {
   return left.name === right.name
     && left.type === right.type
     && left.choice === right.choice
+    && left.rationale === right.rationale
     && left.selected === right.selected
     && left.snoozed === right.snoozed
     && left.observer === right.observer;
@@ -129,6 +130,7 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
           name: message.name,
           type: 'user' as const,
           choice: undefined,
+          rationale: undefined,
           selected: message.selected === true,
           snoozed: false,
           observer: false,
@@ -158,10 +160,10 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
 
   if (message.reset) {
     const resetPlayers = next.players.map((player) => {
-      if (player.choice === undefined && !player.selected) {
+      if (player.choice === undefined && player.rationale === undefined && !player.selected) {
         return player;
       }
-      return { ...player, choice: undefined, selected: false };
+      return { ...player, choice: undefined, rationale: undefined, selected: false };
     });
     const players = resetPlayers.every((player, index) => player === next.players[index])
       ? next.players
@@ -186,6 +188,7 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
         players = updatePlayer(players, choice.name, (player) => ({
           ...player,
           choice: choice.choice,
+          rationale: choice.rationale,
           selected: choice.choice !== undefined,
           snoozed: choice.snoozed,
         }));
