@@ -22,6 +22,11 @@ interface ResetAction extends Action {
     readonly action: 'reset'
 }
 
+interface SetSubjectAction extends Action {
+    readonly action: 'set-subject'
+    readonly subject: string
+}
+
 export function isAction(value: unknown): value is Action {
     return isRecord(value) && typeof value.action === 'string'
 }
@@ -47,6 +52,12 @@ export function isSnoozeAction(action: Action): action is SnoozeAction {
 
 export function isResetAction(action: Action): action is ResetAction {
     return action.action === 'reset'
+}
+
+export function isSetSubjectAction(action: Action): action is SetSubjectAction {
+    return action.action === 'set-subject'
+        && isRecord(action)
+        && typeof action.subject === 'string'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

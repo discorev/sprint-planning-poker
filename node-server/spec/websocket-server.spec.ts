@@ -22,6 +22,7 @@ interface ServerMessage {
     readonly players?: readonly PlayerMessage[]
     readonly choices?: readonly PlayerMessage[]
     readonly cards?: readonly string[]
+    readonly subject?: string | null
 }
 
 interface PlayerMessage {
@@ -348,6 +349,69 @@ describe('planning poker WebSocket adapter', () => {
         const resetMessage = await alice.next(message => message.reset === true, 'browser round reset')
         expect(resetMessage.originator).toBe('Alice')
         expect(resetMessage.players?.some(player => player.name === 'Agent')).toBe(false)
+    })
+
+    test('broadcasts subject changes, surfaces them at registration, and clears them on reset', async () => {
+        const alice = await connect(url)
+        const bob = await connect(url)
+        sockets.push(alice.socket, bob.socket)
+        alice.socket.send(JSON.stringify({ action: 'register', name: 'Alice' }))
+        const registration = await alice.next(message => message.action === 'register')
+        expect(registration.subject).toBeNull()
+        // Drain the {players, reset: true} broadcast bob (already connected but
+        // unregistered) receives from Alice's registration, so it doesn't satisfy a
+        // later `reset === true` wait.
+        await bob.next(message => message.players?.length === 1, 'broadcast from Alice registering')
+
+        alice.socket.send(JSON.stringify({ action: 'set-subject', subject: '  Login flow  ' }))
+        expect(await bob.next(message => message.subject === 'Login flow', 'subject broadcast to Bob')).toEqual({
+            subject: 'Login flow',
+        })
+
+        bob.socket.send(JSON.stringify({ action: 'register', name: 'Robert' }))
+        const bobRegistration = await bob.next(message => message.action === 'register')
+        expect(bobRegistration.subject).toBe('Login flow')
+
+        alice.socket.send(JSON.stringify({ action: 'record-choice', choice: '5' }))
+        bob.socket.send(JSON.stringify({ action: 'record-choice', choice: '8' }))
+        await bob.next(message => Array.isArray(message.choices), 'automatic reveal')
+
+        alice.socket.send(JSON.stringify({ action: 'reset' }))
+        const reset = await bob.next(message => message.reset === true, 'round reset')
+        expect(reset.subject).toBeNull()
+
+        alice.socket.send(JSON.stringify({ action: 'set-subject', subject: 'Signup flow' }))
+        await bob.next(message => message.subject === 'Signup flow', 'second subject broadcast')
+
+        alice.socket.send(JSON.stringify({ action: 'set-subject', subject: '' }))
+        const cleared = await bob.next(message => Object.hasOwn(message, 'subject') && message.subject === null, 'subject cleared')
+        expect(cleared).toEqual({ subject: null })
+    })
+
+    test('wakes an MCP wait_for_update long-poll when a WebSocket user sets the subject', async () => {
+        const alice = await connect(url)
+        sockets.push(alice.socket)
+        alice.socket.send(JSON.stringify({ action: 'register', name: 'Alice' }))
+        await alice.next(message => message.action === 'register')
+
+        const agent = await callMcpTool<JoinedMcpParticipant & { round: { roundId: string }; stateRevision?: number }>(
+            mcpEndpoint,
+            'join_session',
+            { name: 'Agent' },
+        )
+        await alice.next(message => message.players?.length === 2, 'MCP participant join')
+        const state = await callMcpTool<{ stateRevision: number }>(mcpEndpoint, 'get_session_state', caller(agent))
+
+        const pending = callMcpTool<{ timedOut: boolean; state: { round: { subject?: string } } }>(
+            mcpEndpoint,
+            'wait_for_update',
+            { ...caller(agent), sinceRevision: state.stateRevision, timeoutSeconds: 5 },
+        )
+
+        alice.socket.send(JSON.stringify({ action: 'set-subject', subject: 'Login flow' }))
+        const result = await pending
+        expect(result.timedOut).toBe(false)
+        expect(result.state.round.subject).toBe('Login flow')
     })
 
     test('rejects WebSocket upgrades outside the allowlist', async () => {

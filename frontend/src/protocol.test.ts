@@ -6,6 +6,7 @@ import {
   messageChoices,
   messageError,
   messagePlayers,
+  messageSubject,
   parseServerMessage,
   toPlayer,
 } from './protocol';
@@ -52,6 +53,13 @@ describe('server protocol parsing', () => {
     expect(messageCards({ cards: ['small', ''] })).toBeUndefined();
     expect(messageCards({ cards: ['small', 8] })).toBeUndefined();
     expect(messageCards({ cards: 'small' })).toBeUndefined();
+  });
+
+  it('distinguishes an absent subject from a cleared or set one', () => {
+    expect(messageSubject({})).toBeUndefined();
+    expect(messageSubject({ subject: null })).toBeNull();
+    expect(messageSubject({ subject: 'Login flow' })).toBe('Login flow');
+    expect(messageSubject({ subject: 42 })).toBeNull();
   });
 
   it('normalizes valid players while ignoring malformed entries', () => {

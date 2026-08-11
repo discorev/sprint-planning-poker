@@ -75,6 +75,7 @@ export type PlanningPokerEvent =
     | { readonly type: 'vote-changed'; readonly participantId: string; readonly revealed: boolean }
     | { readonly type: 'round-reset'; readonly participantId: string }
     | { readonly type: 'participant-snoozed'; readonly participantId: string; readonly snoozed: boolean; readonly revealed: boolean }
+    | { readonly type: 'subject-changed'; readonly participantId: string }
 
 export type PlanningPokerListener = (event: PlanningPokerEvent) => void
 
@@ -115,6 +116,8 @@ export class PlanningPokerError extends Error {
         this.name = 'PlanningPokerError'
     }
 }
+
+const ROUND_SUBJECT_MAX_LENGTH = 500
 
 export class PlanningPokerSession {
     readonly sessionId: string
@@ -254,6 +257,21 @@ export class PlanningPokerSession {
 
     resetWebSocketRound(participantId: string): void {
         this.resetRoundFor(this.requireWebSocketParticipant(participantId))
+    }
+
+    setRoundSubject(participantId: string, subject?: string): void {
+        const participant = this.requireParticipant(participantId)
+        this.renewLease(participant)
+        const trimmed = normalizeSubject(subject)
+        if (trimmed === this.roundSubject) {
+            return
+        }
+        this.roundSubject = trimmed
+        this.changed({ type: 'subject-changed', participantId })
+    }
+
+    getRoundSubject(): string | undefined {
+        return this.roundSubject
     }
 
     toggleSnoozeByName(participantId: string, targetName: string): PlanningPokerState {
@@ -447,7 +465,7 @@ export class PlanningPokerSession {
         }
         this.votes.clear()
         this.roundId = this.nextId('round')
-        this.roundSubject = subject?.trim() || undefined
+        this.roundSubject = normalizeSubject(subject)
         this.roundStatus = 'voting'
         this.changed({ type: 'round-reset', participantId: participant.participantId })
     }
@@ -558,4 +576,8 @@ export class PlanningPokerSession {
 
 export function isPlanningPokerCard(value: string): value is PlanningPokerCard {
     return PLANNING_POKER_CARDS.some(card => card === value)
+}
+
+function normalizeSubject(subject?: string): string | undefined {
+    return subject?.trim().slice(0, ROUND_SUBJECT_MAX_LENGTH) || undefined
 }

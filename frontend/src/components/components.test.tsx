@@ -6,6 +6,7 @@ import { CardDeck } from './CardDeck';
 import { ConnectionModal } from './ConnectionModal';
 import { PlayerCard } from './PlayerCard';
 import { Register } from './Register';
+import { RoundSubject } from './RoundSubject';
 
 describe('Register', () => {
   it('validates the name, captures observer mode, and submits', async () => {
@@ -187,6 +188,58 @@ describe('PlayerCard', () => {
     );
     expect(screen.getByText('human player')).toBeInTheDocument();
     expect(screen.queryByText('ai player')).not.toBeInTheDocument();
+  });
+});
+
+describe('RoundSubject', () => {
+  it('renders the server value and commits an edit on Enter', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    expect(input).toHaveValue('Login flow');
+    await user.clear(input);
+    await user.type(input, 'Signup flow{Enter}');
+    expect(onCommit).toHaveBeenCalledWith('Signup flow');
+  });
+
+  it('commits on blur and skips the callback when nothing changed', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    render(
+      <>
+        <RoundSubject onCommit={onCommit} subject="Login flow" />
+        <button type="button">elsewhere</button>
+      </>,
+    );
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    await user.click(input);
+    await user.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(onCommit).not.toHaveBeenCalled();
+
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, 'Signup flow');
+    await user.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(onCommit).toHaveBeenCalledWith('Signup flow');
+  });
+
+  it('does not clobber a focused draft when the server value changes', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn<(subject: string) => void>();
+    const { rerender } = render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
+
+    const input = screen.getByPlaceholderText('What are we estimating?');
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, 'Mid-edit draft');
+
+    rerender(<RoundSubject onCommit={onCommit} subject="Server update" />);
+
+    expect(input).toHaveValue('Mid-edit draft');
+    expect(input).toHaveFocus();
   });
 });
 

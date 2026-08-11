@@ -245,6 +245,51 @@ describe('appReducer', () => {
   });
 });
 
+describe('appReducer subject handling', () => {
+  it('sets and clears the subject from explicit message values', () => {
+    const set = appReducer(state(), {
+      type: 'server-message',
+      message: { subject: 'Login flow' },
+    });
+    expect(set.subject).toBe('Login flow');
+
+    const cleared = appReducer(set, {
+      type: 'server-message',
+      message: { subject: null },
+    });
+    expect(cleared.subject).toBeUndefined();
+  });
+
+  it('leaves the subject untouched when a message omits the field', () => {
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { name: 'one', selected: true },
+    });
+    expect(result.subject).toBe('Login flow');
+  });
+
+  it('keeps the subject on legacy reset flags that carry no subject field', () => {
+    // register and departure broadcasts set reset: true without being round resets;
+    // an actual round-reset broadcast always carries an explicit subject (or null).
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { reset: true },
+    });
+    expect(result.subject).toBe('Login flow');
+  });
+
+  it('keeps the subject a reset message explicitly carries', () => {
+    const current = state({ subject: 'Login flow' });
+    const result = appReducer(current, {
+      type: 'server-message',
+      message: { reset: true, subject: 'Signup flow' },
+    });
+    expect(result.subject).toBe('Signup flow');
+  });
+});
+
 describe('allActivePlayersAgree', () => {
   it('requires at least two non-observer, non-snoozed matching choices', () => {
     expect(allActivePlayersAgree([

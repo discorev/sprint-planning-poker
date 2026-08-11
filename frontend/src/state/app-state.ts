@@ -5,6 +5,7 @@ import {
   messageChoices,
   messageError,
   messagePlayers,
+  messageSubject,
   type Player,
   type ServerMessage,
 } from '../protocol';
@@ -22,6 +23,7 @@ export interface AppState {
   readonly celebrationCount: number;
   readonly cards: readonly string[];
   readonly players: readonly Player[];
+  readonly subject?: string;
 }
 
 export type AppAction =
@@ -119,6 +121,14 @@ function applyServerMessage(state: AppState, message: ServerMessage): AppState {
   }
 
   // These branches intentionally remain independent and ordered to match the legacy client.
+  const subject = messageSubject(message);
+  if (subject !== undefined) {
+    const nextSubject = subject ?? undefined;
+    if (next.subject !== nextSubject) {
+      next = { ...next, subject: nextSubject };
+    }
+  }
+
   if (hasSelectionUpdate(message)) {
     const existing = next.players.some((player) => player.name === message.name);
     const players = existing

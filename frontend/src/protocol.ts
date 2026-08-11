@@ -13,7 +13,8 @@ export type ClientMessage =
   | { readonly action: 'register'; readonly name: string; readonly observer?: boolean }
   | { readonly action: 'record-choice'; readonly choice?: string }
   | { readonly action: 'reset' }
-  | { readonly action: 'snooze'; readonly player: string };
+  | { readonly action: 'snooze'; readonly player: string }
+  | { readonly action: 'set-subject'; readonly subject: string };
 
 export type ServerMessage = Readonly<Record<string, unknown>>;
 
@@ -74,6 +75,13 @@ export function messagePlayers(message: ServerMessage): readonly Player[] | unde
     }
   }
   return players;
+}
+
+export function messageSubject(message: ServerMessage): string | null | undefined {
+  if (!Object.hasOwn(message, 'subject')) {
+    return undefined;
+  }
+  return typeof message.subject === 'string' ? message.subject : null;
 }
 
 export function messageChoices(message: ServerMessage): readonly Player[] | undefined {

@@ -328,6 +328,45 @@ describe('PlanningPokerSession', () => {
         expect(reset.participants.some(participant => participant.name === 'Alice')).toBe(false)
     })
 
+    test('sets, trims, caps, and clears the round subject; no-ops when unchanged', () => {
+        const session = createSession()
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'websocket' })
+        const bob = session.joinParticipant({ name: 'Robert', transport: 'mcp' })
+
+        const revisionBeforeSet = session.getPublicState().stateRevision
+        session.setRoundSubject(alice.participantId, '  Login flow  ')
+        expect(session.getPublicState().round.subject).toBe('Login flow')
+        expect(session.getPublicState().stateRevision).toBeGreaterThan(revisionBeforeSet)
+
+        const revisionBeforeNoop = session.getPublicState().stateRevision
+        session.setRoundSubject(bob.participantId, 'Login flow')
+        expect(session.getPublicState().stateRevision).toBe(revisionBeforeNoop)
+
+        session.setRoundSubject(alice.participantId, ' '.repeat(3) + 'x'.repeat(600))
+        expect(session.getRoundSubject()).toHaveLength(500)
+
+        session.setRoundSubject(alice.participantId, '   ')
+        expect(session.getRoundSubject()).toBeUndefined()
+        expect(session.getPublicState().round.subject).toBeUndefined()
+    })
+
+    test('setRoundSubject throws for an unknown participant and renews an MCP lease', () => {
+        let now = 0
+        const session = createSession({ now: () => now })
+        const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })
+
+        expect(() => session.setRoundSubject('unknown', 'Subject')).toThrowError(
+            expect.objectContaining({ code: 'participant_not_found' }),
+        )
+
+        now = 60_000
+        session.setRoundSubject(alice.participantId, 'Subject')
+        now = 100_000
+        // The original lease (granted at t=0, 90s duration) would have expired by now;
+        // setRoundSubject renewing it at t=60s is what keeps Alice from being pruned.
+        expect(session.pruneExpiredParticipants()).toEqual([])
+    })
+
     test('rejoining with a disconnected ghost name evicts the ghost and succeeds', () => {
         const session = createSession()
         const alice = session.joinParticipant({ name: 'Alice', transport: 'mcp' })

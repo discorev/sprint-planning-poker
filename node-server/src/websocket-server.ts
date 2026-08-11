@@ -97,6 +97,7 @@ export function attachPlanningPokerWebSocketServer(
                     reset: true,
                     originator: session.getParticipantName(event.participantId),
                     players: session.getWebSocketPlayers(),
+                    subject: session.getRoundSubject() ?? null,
                 })
                 return
             case 'participant-snoozed': {
@@ -107,7 +108,10 @@ export function attachPlanningPokerWebSocketServer(
                 if (event.revealed) {
                     broadcastChoices()
                 }
+                return
             }
+            case 'subject-changed':
+                broadcast({ subject: session.getRoundSubject() ?? null })
         }
     }
 
@@ -157,6 +161,7 @@ export function attachPlanningPokerWebSocketServer(
                         cards: state.cards,
                         players,
                         reset: true,
+                        subject: state.round.subject ?? null,
                         ...(state.round.status === 'revealed' && { choices: players }),
                     }))
                     broadcast({ players, reset: true }, socket)
@@ -182,6 +187,10 @@ export function attachPlanningPokerWebSocketServer(
                 }
                 if (Guards.isSnoozeAction(message)) {
                     session.toggleWebSocketSnoozeByName(socket.participantId, message.player)
+                    return
+                }
+                if (Guards.isSetSubjectAction(message)) {
+                    session.setRoundSubject(socket.participantId, message.subject)
                 }
             } catch (error) {
                 sendDomainError(socket, error, message.action)
