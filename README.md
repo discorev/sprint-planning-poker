@@ -112,3 +112,16 @@ bun start         # vite dev server on :4200
 bun run test:unit # vitest
 bun run e2e       # playwright
 ```
+
+### Adding icons
+
+FontAwesome Pro is an optional, fenced dependency: normal installs and builds skip
+it because the app ships generated inline SVG components instead. To add an icon:
+
+1. Run `bun run icons:install` with `FONTAWESOME_PACKAGE_TOKEN` set.
+2. Add the icon to the list in `scripts/generate-icons.ts`.
+3. Run `bun run icons:generate`.
+4. Commit the generated icon components.
+
+The Font Awesome Pro perpetual licence permits embedding these icons in the app;
+do not republish them as an icon package.

@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import '@fortawesome/fontawesome-pro/css/all.css';
 import './styles.css';
 import { App } from './App';
 

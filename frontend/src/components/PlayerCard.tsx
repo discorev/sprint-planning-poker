@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Brain, Diamond, Eye, MicrochipAi, Moon, Snooze, Spade, User } from './icons';
 import type { Player } from '../protocol';
 import type { Theme } from '../theme';
 
@@ -98,7 +99,7 @@ export const PlayerCard = memo(function PlayerCard({ index, isYou, player, showR
             onClick={() => onSnooze(player.name)}
             type="button"
           >
-            <i aria-hidden="true" className={`fa-light ${player.snoozed ? 'fa-snooze' : 'fa-moon'}`} />
+            {player.snoozed ? <Snooze aria-hidden="true" /> : <Moon aria-hidden="true" />}
             <span className="sr-only">Click to {player.snoozed ? 'un-snooze' : 'snooze'} player {player.name}</span>
           </button>
         )}
@@ -106,7 +107,7 @@ export const PlayerCard = memo(function PlayerCard({ index, isYou, player, showR
       <div className="mini-wrap">
         {player.observer ? (
           <div aria-label="observer" className="mini empty" title="observer">
-            <i aria-hidden="true" className="fa-light fa-eye" />
+            <Eye aria-hidden="true" />
           </div>
         ) : player.choice !== undefined ? (
           <div aria-label={`voted ${player.choice}`} className="mini face" style={{ animationDelay: `${index * 90}ms` }}>
@@ -114,7 +115,7 @@ export const PlayerCard = memo(function PlayerCard({ index, isYou, player, showR
           </div>
         ) : player.selected ? (
           <div aria-label="vote hidden" className="mini back" title="vote is in">
-            <i aria-hidden="true" className={`fa-solid ${theme === 'felt' ? 'fa-spade' : 'fa-diamond'}`} />
+            {theme === 'felt' ? <Spade aria-hidden="true" /> : <Diamond aria-hidden="true" />}
           </div>
         ) : player.snoozed ? (
           <div aria-label="snoozed" className="mini empty"><span className="pill-snoozed">snoozed</span></div>
@@ -123,7 +124,7 @@ export const PlayerCard = memo(function PlayerCard({ index, isYou, player, showR
         )}
       </div>
       <h5 className="player-name">
-        <i aria-hidden="true" className={`fal ${player.type === 'agent' ? 'fa-microchip-ai' : 'fa-user'}`} />
+        {player.type === 'agent' ? <MicrochipAi aria-hidden="true" /> : <User aria-hidden="true" />}
         <span className="sr-only">{player.type === 'agent' ? 'ai player' : 'human player'}</span>
         {player.name}
       </h5>
@@ -138,7 +139,7 @@ export const PlayerCard = memo(function PlayerCard({ index, isYou, player, showR
             title={player.rationale}
             type="button"
           >
-            <i aria-hidden="true" className="fal fa-brain" />why {player.choice}?
+            <Brain aria-hidden="true" />why {player.choice}?
             <span className="sr-only">rationale: {player.rationale}</span>
           </button>
           {rationaleOpen ? createPortal(

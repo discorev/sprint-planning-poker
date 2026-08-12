@@ -14,7 +14,7 @@ export const Masthead = memo(function Masthead({ full = false, theme }: Masthead
       {full ? (
         <>
           <div className="suits" aria-hidden="true">
-            {SUITS.map(({ icon, red }) => <i className={`fa-solid ${icon}${red ? ' red' : ''}`} key={icon} />)}
+            {SUITS.map(({ name, Icon, red }) => <Icon className={red ? 'red' : undefined} key={name} />)}
           </div>
           <hr className="rule" />
         </>

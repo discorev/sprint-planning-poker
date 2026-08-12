@@ -5,7 +5,6 @@
     "": {
       "name": "planning-poker",
       "dependencies": {
-        "@fortawesome/fontawesome-pro": "^6.7.2",
         "canvas-confetti": "^1.9.3",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
@@ -27,6 +26,9 @@
         "typescript": "^5.9.3",
         "vite": "^7.1.1",
         "vitest": "^3.2.4",
+      },
+      "optionalDependencies": {
+        "@fortawesome/fontawesome-pro": "^6.7.2",
       },
     },
   },

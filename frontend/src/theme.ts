@@ -1,12 +1,13 @@
 import { useCallback, useLayoutEffect, useState } from 'react';
+import { Club, Diamond, Heart, Spade } from './components/icons';
 
 export type Theme = 'felt' | 'night';
 
 export const SUITS = [
-  { icon: 'fa-spade', red: false },
-  { icon: 'fa-heart', red: true },
-  { icon: 'fa-diamond', red: true },
-  { icon: 'fa-club', red: false },
+  { name: 'spade', Icon: Spade, red: false },
+  { name: 'heart', Icon: Heart, red: true },
+  { name: 'diamond', Icon: Diamond, red: true },
+  { name: 'club', Icon: Club, red: false },
 ] as const;
 
 interface ThemeText {

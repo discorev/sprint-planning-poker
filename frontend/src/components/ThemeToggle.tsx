@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Moon, SunBright } from './icons';
 import { THEMES, type Theme } from '../theme';
 
 interface ThemeToggleProps {
@@ -10,7 +11,7 @@ export const ThemeToggle = memo(function ThemeToggle({ theme, onToggle }: ThemeT
   const offeringNight = theme === 'felt';
   return (
     <button aria-label={`Switch to ${THEMES[theme].toggleWord} theme`} className="theme-toggle" onClick={onToggle} type="button">
-      <i aria-hidden="true" className={`orb fa-light ${offeringNight ? 'fa-moon' : 'fa-sun-bright'}`} />
+      {offeringNight ? <Moon aria-hidden="true" className="orb" /> : <SunBright aria-hidden="true" className="orb" />}
       <span>{THEMES[theme].toggleWord}</span>
     </button>
   );

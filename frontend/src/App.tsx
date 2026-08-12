@@ -7,6 +7,7 @@ import { Register } from './components/Register';
 import { RevealStrip, TableStatus } from './components/RoundSummary';
 import { RoundSubject } from './components/RoundSubject';
 import { ThemeToggle } from './components/ThemeToggle';
+import { RotateLeft } from './components/icons';
 import { celebrate } from './celebrate';
 import { usePlanningPokerSocket } from './socket/use-planning-poker-socket';
 import { appReducer, initialAppState } from './state/app-state';
@@ -105,7 +106,7 @@ export function App() {
               ))}
               {state.showReset ? (
                 <button aria-label="Reset round" className="player reset-tile" onClick={reset} type="button">
-                  <span className="reset-icon"><i aria-hidden="true" className="fa-light fa-rotate-left" /></span>
+                  <span className="reset-icon"><RotateLeft aria-hidden="true" /></span>
                   New round
                 </button>
               ) : null}

@@ -14,6 +14,7 @@ export const CardDeck = memo(function CardDeck({ cards, selection, disabled, onC
       {cards.map((card, index) => {
         const chosen = card === selection;
         const suit = SUITS[index % SUITS.length];
+        const SuitIcon = suit.Icon;
         const red = suit.red ? ' red' : '';
         return (
           <button
@@ -28,7 +29,7 @@ export const CardDeck = memo(function CardDeck({ cards, selection, disabled, onC
             <span aria-hidden="true" className={`corner tl${red}`}>{card}</span>
             <span aria-hidden="true" className={`corner br${red}`}>{card}</span>
             <span aria-hidden="true" className="value">{card}</span>
-            <i aria-hidden="true" className={`suit-mark fa-solid ${suit.icon}${red}`} />
+            <SuitIcon aria-hidden="true" className={`suit-mark${red}`} />
           </button>
         );
       })}

@@ -11,13 +11,17 @@
     "test": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:watch": "vitest",
-    "e2e": "bun run build && playwright test"
+    "e2e": "bun run build && playwright test",
+    "icons:install": "bun install --config=tools/icons-bunfig.toml",
+    "icons:generate": "bun run scripts/generate-icons.ts"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-pro": "^6.7.2",
     "canvas-confetti": "^1.9.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "optionalDependencies": {
+    "@fortawesome/fontawesome-pro": "^6.7.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",

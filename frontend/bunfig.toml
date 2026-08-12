@@ -1,0 +1,3 @@
+# fontawesome-pro is only needed to regenerate src/components/icons.
+[install]
+optional = false

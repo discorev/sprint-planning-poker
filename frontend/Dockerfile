@@ -1,7 +1,6 @@
 FROM oven/bun:1.3.9-alpine AS builder
-ARG FONTAWESOME_PACKAGE_TOKEN
 WORKDIR /app
-COPY ./.npmrc ./package.json ./bun.lock ./
+COPY ./.npmrc ./bunfig.toml ./package.json ./bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build

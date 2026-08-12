@@ -19,7 +19,7 @@ main{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:38px 20p
 .corner-status{position:absolute;top:8px;right:9px;display:flex;align-items:center;gap:5px;z-index:3}
 .reset-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:150px;cursor:pointer;background:transparent}
 .reset-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px}
-.player-name i{font-size:14px;flex:none}
+.player-name svg{font-size:14px;flex:none}
 .theme-toggle{
   position:fixed;top:16px;right:16px;z-index:20;display:flex;align-items:center;gap:8px;
   padding:8px 15px;border-radius:999px;cursor:pointer;
@@ -167,7 +167,7 @@ body.theme-felt{
     font-family:'Fraunces',serif;font-weight:500;font-size:18px;color:var(--cream);
     margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;
   }
-  .player-name i{opacity:.75}
+  .player-name svg{opacity:.75}
   .player.disconnected .player-name{color:var(--text-dim)}
   .player-sub{font-size:12px;font-style:italic;color:var(--text-dim);margin-top:3px;min-height:16px}
   .mini{border-radius:7px}
@@ -180,7 +180,7 @@ body.theme-felt{
     border:1px solid var(--gold);
     box-shadow:0 4px 12px rgba(0,0,0,.45), inset 0 0 0 3px rgba(0,0,0,.18);
   }
-  .mini.back i{color:rgba(246,238,218,.85);font-size:14px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .mini.back svg{color:rgba(246,238,218,.85);font-size:14px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
   .mini.face{
     background:linear-gradient(165deg,#fbf5e6,var(--cream-dim));
     border:1px solid rgba(30,58,43,.3);color:var(--card-ink);
@@ -190,7 +190,7 @@ body.theme-felt{
     animation-delay:calc(var(--i)*90ms);
   }
   .snooze-btn{background:none;border:0;cursor:pointer;line-height:1;padding:3px;font-size:13px;color:rgba(239,230,205,.35);transition:color .2s, transform .15s}
-  .snooze-btn i{display:block}
+  .snooze-btn svg{display:block}
   .snooze-btn:hover{color:var(--gold);transform:scale(1.15)}
   .snooze-btn.active{color:var(--gold)}
   .badge{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid currentColor}
@@ -203,7 +203,7 @@ body.theme-felt{
     color:var(--gold);font-family:'Karla';font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
     padding:5px 12px;cursor:pointer;transition:all .15s;
   }
-  .rationale-btn i{font-size:12px}
+  .rationale-btn svg{font-size:12px}
   .rationale-btn:hover,.rationale-btn[aria-expanded="true"]{background:rgba(216,179,102,.14);border-color:var(--gold);color:var(--gold-hi)}
   .rationale-pop{
     position:fixed;width:252px;z-index:50;padding:12px 14px;text-align:left;
@@ -391,8 +391,8 @@ body.theme-night{
     font-family:'Unica One',sans-serif;font-weight:400;font-size:18px;letter-spacing:.08em;color:var(--text);
     margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;text-transform:uppercase;
   }
-  .player-name i{color:var(--cyan-dim)}
-  .player.is-agent .player-name i{color:var(--magenta)}
+  .player-name svg{color:var(--cyan-dim)}
+  .player.is-agent .player-name svg{color:var(--magenta)}
   .player-sub{font-size:10.5px;letter-spacing:.08em;color:var(--text-dim);margin-top:4px;min-height:15px}
   .mini{border-radius:8px}
   .mini.empty{border:1.5px dashed var(--line-soft);color:var(--text-dim);font-size:15px}
@@ -405,7 +405,7 @@ body.theme-night{
     animation:holo 6s linear infinite;
     background-size:100% 100%, 220% 220%;
   }
-  .mini.back i{color:rgba(255,255,255,.85);font-size:12px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .mini.back svg{color:rgba(255,255,255,.85);font-size:12px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.6))}
   .mini.face{
     background:linear-gradient(170deg,#16233c,var(--panel));
     border:1px solid var(--cyan-dim);color:var(--cyan);
@@ -417,7 +417,7 @@ body.theme-night{
   }
   .player.is-agent .mini.face{border-color:var(--magenta-dim);color:var(--magenta);text-shadow:0 0 12px rgba(255,92,168,.7);box-shadow:0 4px 14px rgba(0,0,0,.5), 0 0 14px rgba(255,92,168,.25)}
   .snooze-btn{background:none;border:0;cursor:pointer;line-height:1;padding:3px;font-size:12px;color:var(--text-dim);opacity:.6;transition:all .15s}
-  .snooze-btn i{display:block}
+  .snooze-btn svg{display:block}
   .snooze-btn:hover{color:var(--amber);opacity:1;transform:scale(1.15)}
   .snooze-btn.active{color:var(--amber);opacity:1}
   .badge{font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;padding:2.5px 7px;border-radius:999px;border:1px solid currentColor}
@@ -430,7 +430,7 @@ body.theme-night{
     color:var(--magenta);font-family:'Chivo Mono',monospace;font-size:10px;letter-spacing:.14em;
     padding:5px 11px;cursor:pointer;transition:all .15s;
   }
-  .rationale-btn i{font-size:12px}
+  .rationale-btn svg{font-size:12px}
   .rationale-btn:hover,.rationale-btn[aria-expanded="true"]{border-color:var(--magenta);background:rgba(255,92,168,.08);box-shadow:0 0 14px rgba(255,92,168,.25)}
   .rationale-pop{
     position:fixed;width:252px;z-index:50;padding:12px 14px;text-align:left;
