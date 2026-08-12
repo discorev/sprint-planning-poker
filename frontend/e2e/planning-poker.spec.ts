@@ -12,7 +12,7 @@ async function register(page: Page, name: string, observer = false): Promise<voi
   if (observer) {
     await page.getByLabel('Observer mode').check();
   }
-  await page.getByRole('button', { name: 'Submit' }).click();
+  await page.getByRole('button', { name: /take a seat|jack in/i }).click();
 }
 
 test('completes and resets a matching multiplayer round', async ({ browser }) => {
@@ -73,11 +73,11 @@ test('rejects duplicate registration and keeps the registration form usable', as
   await register(player, 'Casey');
   await openApp(duplicate);
   await duplicate.getByLabel('Name').fill('Casey');
-  await duplicate.getByRole('button', { name: 'Submit' }).click();
+  await duplicate.getByRole('button', { name: /take a seat|jack in/i }).click();
 
   await expect(duplicate.getByRole('alert')).toContainText('name is already taken');
   await expect(duplicate.getByLabel('Name')).toHaveValue('Casey');
-  await expect(duplicate.getByRole('button', { name: 'Submit' })).toBeEnabled();
+  await expect(duplicate.getByRole('button', { name: /take a seat|jack in/i })).toBeEnabled();
 
   await playerContext.close();
   await duplicateContext.close();

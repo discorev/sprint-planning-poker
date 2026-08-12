@@ -2,11 +2,28 @@ import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import type { Player } from '../protocol';
 import { CardDeck } from './CardDeck';
 import { ConnectionModal } from './ConnectionModal';
 import { PlayerCard } from './PlayerCard';
 import { Register } from './Register';
 import { RoundSubject } from './RoundSubject';
+import { ThemeToggle } from './ThemeToggle';
+
+const basePlayer: Player = {
+  name: 'Alice',
+  type: 'user',
+  choice: undefined,
+  rationale: undefined,
+  selected: false,
+  snoozed: false,
+  observer: false,
+  disconnected: false,
+};
+
+function playerCard(player: Player, onSnooze: (name: string) => void = () => undefined, showReset = false) {
+  return <PlayerCard index={0} isYou={false} onSnooze={onSnooze} player={player} showReset={showReset} theme="felt" />;
+}
 
 describe('Register', () => {
   it('validates the name, captures observer mode, and submits', async () => {
@@ -22,7 +39,6 @@ describe('Register', () => {
         <Register
           name={name}
           observer={observer}
-          submitted={false}
           onDismissError={() => undefined}
           onNameChange={(nextName) => {
             onNameChange(nextName);
@@ -33,13 +49,14 @@ describe('Register', () => {
             setObserver(nextObserver);
           }}
           onRegister={onRegister}
+          submitted={false}
+          theme="felt"
         />
       );
     }
 
     render(<RegisterHarness />);
-
-    const submit = screen.getByRole('button', { name: 'Submit' });
+    const submit = screen.getByRole('button', { name: 'Take a seat' });
     expect(submit).toBeDisabled();
     await user.type(screen.getByLabelText('Name'), 'Al');
     expect(submit).toBeDisabled();
@@ -48,7 +65,6 @@ describe('Register', () => {
     expect(submit).toBeEnabled();
     await user.click(screen.getByLabelText('Observer mode'));
     await user.click(submit);
-
     expect(onObserverChange).toHaveBeenCalledWith(true);
     expect(onRegister).toHaveBeenCalledOnce();
   });
@@ -61,14 +77,14 @@ describe('Register', () => {
         error="name is already taken"
         name="Alice"
         observer={false}
-        submitted={false}
         onDismissError={onDismissError}
         onNameChange={() => undefined}
         onObserverChange={() => undefined}
         onRegister={() => undefined}
+        submitted={false}
+        theme="felt"
       />,
     );
-
     expect(screen.getByRole('alert')).toHaveTextContent('Failed! name is already taken');
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onDismissError).toHaveBeenCalledOnce();
@@ -81,12 +97,10 @@ describe('CardDeck', () => {
     const onChoose = vi.fn<(choice: string) => void>();
     const cards = ['server-small', 'server-medium', 'server-large'];
     render(<CardDeck cards={cards} disabled={false} onChoose={onChoose} selection="server-medium" />);
-
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(cards);
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(cards);
     const chosen = screen.getByRole('button', { name: 'server-medium' });
     expect(chosen).toHaveAttribute('aria-pressed', 'true');
-    expect(chosen).toHaveClass('bg-white', 'text-[#212529]', 'border-[#007bff]');
-    expect(chosen).not.toHaveClass('bg-[#007bff]', 'text-white');
+    expect(chosen).toHaveClass('card', 'selected');
     await user.click(chosen);
     expect(onChoose).toHaveBeenCalledWith('server-medium');
   });
@@ -101,30 +115,17 @@ describe('PlayerCard', () => {
   it('shows selection, choice, and snooze controls', async () => {
     const user = userEvent.setup();
     const onSnooze = vi.fn<(name: string) => void>();
-    const { container } = render(
-      <PlayerCard
-        onSnooze={onSnooze}
-        player={{ name: 'Alice', type: 'user', choice: '8', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: false }}
-      />,
-    );
-
-    expect(container.querySelector('.player-choice')).toHaveClass('border-[#007bff]');
-    expect(screen.getByText('active player').parentElement).toHaveClass('text-[#d8d8d8]');
-    expect(screen.getByText('active player').parentElement).not.toHaveClass('text-fuchsia-500');
+    const { container } = render(playerCard({ ...basePlayer, choice: '8', selected: true }, onSnooze));
+    expect(container.querySelector('.player')).toHaveClass('voted');
+    expect(screen.getByRole('button', { name: /snooze player Alice/i })).not.toHaveClass('active');
     expect(screen.getByText('8')).toBeInTheDocument();
     expect(screen.queryByText(/rationale:/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /snooze player Alice/i }));
     expect(onSnooze).toHaveBeenCalledWith('Alice');
   });
 
-  it('shows a rationale icon when a player provides one', () => {
-    render(
-      <PlayerCard
-        onSnooze={() => undefined}
-        player={{ name: 'Alice', type: 'agent', choice: '8', rationale: 'Touches storage', selected: true, snoozed: false, observer: false, disconnected: false }}
-      />,
-    );
-
+  it('shows a rationale button and accessible text after reveal', () => {
+    render(playerCard({ ...basePlayer, type: 'agent', choice: '8', rationale: 'Touches storage', selected: true }, undefined, true));
     expect(screen.getByTitle('Touches storage')).toBeInTheDocument();
     expect(screen.getByText('rationale: Touches storage')).toBeInTheDocument();
   });
@@ -132,60 +133,32 @@ describe('PlayerCard', () => {
   it('shows snoozed players and lets them be woken', async () => {
     const user = userEvent.setup();
     const onSnooze = vi.fn<(name: string) => void>();
-    render(
-      <PlayerCard
-        onSnooze={onSnooze}
-        player={{ name: 'Bob', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: true, observer: false, disconnected: false }}
-      />,
-    );
-
-    expect(screen.getByText('snoozed player').parentElement).toHaveClass('text-fuchsia-500');
-    expect(screen.getByText('snoozed player').parentElement).not.toHaveClass('text-[#d8d8d8]');
+    const { container } = render(playerCard({ ...basePlayer, name: 'Bob', snoozed: true }, onSnooze));
+    expect(container.querySelector('.player')).toHaveClass('snoozed');
+    expect(screen.getByRole('button', { name: /un-snooze player Bob/i })).toHaveClass('active');
     await user.click(screen.getByRole('button', { name: /un-snooze player Bob/i }));
     expect(onSnooze).toHaveBeenCalledWith('Bob');
   });
 
   it('shows a disconnected marker instead of snooze and renders no button', () => {
-    render(
-      <PlayerCard
-        onSnooze={() => undefined}
-        player={{ name: 'Ghost', type: 'user', choice: '5', rationale: undefined, selected: true, snoozed: false, observer: false, disconnected: true }}
-      />,
-    );
-
-    expect(screen.getByText('disconnected player Ghost')).toBeInTheDocument();
-    expect(screen.getByText('disconnected player Ghost').parentElement).toHaveClass('text-red-500');
+    const { container } = render(playerCard({ ...basePlayer, name: 'Ghost', choice: '5', selected: true, disconnected: true }));
+    expect(container.querySelector('.player')).toHaveClass('disconnected');
+    expect(screen.getByText('left')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Ghost/ })).toHaveClass('text-[#a09a9a]');
   });
 
   it('shows the observer marker instead of snooze', () => {
-    render(
-      <PlayerCard
-        onSnooze={() => undefined}
-        player={{ name: 'Observer', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: true, disconnected: false }}
-      />,
-    );
+    render(playerCard({ ...basePlayer, name: 'Observer', observer: true }));
     expect(screen.getByText('observer')).toBeInTheDocument();
+    expect(screen.getByText('watching')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('labels participants as ai or human user for screen readers', () => {
-    const { rerender } = render(
-      <PlayerCard
-        onSnooze={() => undefined}
-        player={{ name: 'Agent', type: 'agent', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false }}
-      />,
-    );
+    const { rerender } = render(playerCard({ ...basePlayer, name: 'Agent', type: 'agent' }));
     expect(screen.getByText('ai player')).toBeInTheDocument();
     expect(screen.queryByText('human player')).not.toBeInTheDocument();
-
-    rerender(
-      <PlayerCard
-        onSnooze={() => undefined}
-        player={{ name: 'Human', type: 'user', choice: undefined, rationale: undefined, selected: false, snoozed: false, observer: false, disconnected: false }}
-      />,
-    );
+    rerender(playerCard({ ...basePlayer, name: 'Human' }));
     expect(screen.getByText('human player')).toBeInTheDocument();
     expect(screen.queryByText('ai player')).not.toBeInTheDocument();
   });
@@ -196,7 +169,6 @@ describe('RoundSubject', () => {
     const user = userEvent.setup();
     const onCommit = vi.fn<(subject: string) => void>();
     render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
-
     const input = screen.getByPlaceholderText('What are we estimating?');
     expect(input).toHaveValue('Login flow');
     await user.clear(input);
@@ -207,18 +179,11 @@ describe('RoundSubject', () => {
   it('commits on blur and skips the callback when nothing changed', async () => {
     const user = userEvent.setup();
     const onCommit = vi.fn<(subject: string) => void>();
-    render(
-      <>
-        <RoundSubject onCommit={onCommit} subject="Login flow" />
-        <button type="button">elsewhere</button>
-      </>,
-    );
-
+    render(<><RoundSubject onCommit={onCommit} subject="Login flow" /><button type="button">elsewhere</button></>);
     const input = screen.getByPlaceholderText('What are we estimating?');
     await user.click(input);
     await user.click(screen.getByRole('button', { name: 'elsewhere' }));
     expect(onCommit).not.toHaveBeenCalled();
-
     await user.click(input);
     await user.clear(input);
     await user.type(input, 'Signup flow');
@@ -230,16 +195,23 @@ describe('RoundSubject', () => {
     const user = userEvent.setup();
     const onCommit = vi.fn<(subject: string) => void>();
     const { rerender } = render(<RoundSubject onCommit={onCommit} subject="Login flow" />);
-
     const input = screen.getByPlaceholderText('What are we estimating?');
     await user.click(input);
     await user.clear(input);
     await user.type(input, 'Mid-edit draft');
-
     rerender(<RoundSubject onCommit={onCommit} subject="Server update" />);
-
     expect(input).toHaveValue('Mid-edit draft');
     expect(input).toHaveFocus();
+  });
+});
+
+describe('ThemeToggle', () => {
+  it('offers and toggles the opposite theme', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn<() => void>();
+    render(<ThemeToggle onToggle={onToggle} theme="felt" />);
+    await user.click(screen.getByRole('button', { name: 'Switch to Night theme' }));
+    expect(onToggle).toHaveBeenCalledOnce();
   });
 });
 

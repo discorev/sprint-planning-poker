@@ -28,11 +28,12 @@ export const RoundSubject = memo(function RoundSubject({ subject, onCommit }: Ro
   };
 
   return (
-    <div className="mb-2">
+    <section className="subject-row">
       <label className="sr-only" htmlFor="round-subject">What are we estimating?</label>
       <input
-        className="block h-[38px] w-full rounded border border-black/15 bg-white px-3 py-1.5 text-base text-[#495057] transition focus:border-[#80bdff] focus:outline-none focus:ring-[3px] focus:ring-[#007bff]/25"
+        className="subject-input"
         id="round-subject"
+        maxLength={500}
         onBlur={() => {
           focused.current = false;
           commit();
@@ -46,6 +47,6 @@ export const RoundSubject = memo(function RoundSubject({ subject, onCommit }: Ro
         type="text"
         value={draft}
       />
-    </div>
+    </section>
   );
 });

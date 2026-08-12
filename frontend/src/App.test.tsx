@@ -43,7 +43,7 @@ describe('App', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Name'), 'Alice');
-    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    await user.click(screen.getByRole('button', { name: /take a seat|jack in/i }));
     expect(socketMock.register).toHaveBeenCalledWith('Alice', false);
 
     dispatch({ type: 'registration-finished', success: true });
@@ -83,7 +83,7 @@ describe('App', () => {
 
     await user.type(screen.getByLabelText('Name'), 'Watcher');
     await user.click(screen.getByLabelText('Observer mode'));
-    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    await user.click(screen.getByRole('button', { name: /take a seat|jack in/i }));
     expect(socketMock.register).toHaveBeenCalledWith('Watcher', true);
 
     dispatch({ type: 'registration-finished', success: true });

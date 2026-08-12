@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useReducer } from 'react';
 import { CardDeck } from './components/CardDeck';
 import { ConnectionModal } from './components/ConnectionModal';
+import { Masthead } from './components/Masthead';
 import { PlayerCard } from './components/PlayerCard';
 import { Register } from './components/Register';
+import { RevealStrip, TableStatus } from './components/RoundSummary';
 import { RoundSubject } from './components/RoundSubject';
+import { ThemeToggle } from './components/ThemeToggle';
 import { celebrate } from './celebrate';
 import { usePlanningPokerSocket } from './socket/use-planning-poker-socket';
 import { appReducer, initialAppState } from './state/app-state';
+import { THEMES, useTheme } from './theme';
 
 export function App() {
   const [state, dispatch] = useReducer(appReducer, initialAppState);
+  const [theme, toggleTheme] = useTheme();
   const socket = usePlanningPokerSocket(dispatch);
 
   useEffect(() => {
     if (state.celebrationCount > 0) {
-      celebrate();
+      celebrate(THEMES[theme].confetti);
     }
   }, [state.celebrationCount]);
 
@@ -60,6 +65,7 @@ export function App() {
 
   return (
     <>
+      <ThemeToggle onToggle={toggleTheme} theme={theme} />
       {!state.registered ? (
         <Register
           error={state.error}
@@ -70,42 +76,40 @@ export function App() {
           onObserverChange={observerChanged}
           onRegister={register}
           submitted={state.submitting}
+          theme={theme}
         />
       ) : (
-        <main className="mx-auto mt-[10px] w-full max-w-[1140px] px-3">
+        <main>
+          <Masthead theme={theme} />
           <RoundSubject onCommit={setSubject} subject={state.subject} />
           {!isObserver ? (
-            <section className="mb-2 rounded border border-black/15 bg-white">
-              <h2 className="mb-0 border-b border-black/15 bg-black/[0.03] px-5 py-3 text-base font-normal">Your Choice</h2>
-              <div className="p-5">
-                <CardDeck cards={state.cards} disabled={state.showReset} onChoose={choose} selection={state.selection} />
-              </div>
+            <section aria-label="Your choice" className="your-choice">
+              <h2 className="section-title">Your Choice</h2>
+              <CardDeck cards={state.cards} disabled={state.showReset} onChoose={choose} selection={state.selection} />
             </section>
           ) : null}
-
-          <section aria-label="Players" className="grid grid-cols-1 gap-x-[30px] md:grid-cols-5">
-            {state.players.map((player) => (
-              <div className="mb-6 min-w-0" key={player.name}>
-                <PlayerCard onSnooze={snooze} player={player} />
-              </div>
-            ))}
-            {state.showReset ? (
-              <div className="mb-6 min-w-0">
-                <button
-                  aria-label="Reset round"
-                  className="w-full rounded border border-black/15 bg-white text-[#212529] transition hover:border-black/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#007bff]"
-                  onClick={reset}
-                  type="button"
-                >
-                  <span className="flex items-center justify-center p-5">
-                    <span className="fa-stack fa-2x" aria-hidden="true">
-                      <i className="far fa-recycle fa-stack-1x" />
-                      <i className="fal fa-trash fa-stack-2x" />
-                    </span>
-                  </span>
+          <TableStatus name={state.name} players={state.players} showReset={state.showReset} />
+          {state.showReset ? <RevealStrip players={state.players} theme={theme} /> : null}
+          <section aria-label="Players">
+            <div className="players-grid">
+              {state.players.map((player, index) => (
+                <PlayerCard
+                  index={index}
+                  isYou={player.name === state.name}
+                  key={player.name}
+                  onSnooze={snooze}
+                  player={player}
+                  showReset={state.showReset}
+                  theme={theme}
+                />
+              ))}
+              {state.showReset ? (
+                <button aria-label="Reset round" className="player reset-tile" onClick={reset} type="button">
+                  <span className="reset-icon"><i aria-hidden="true" className="fa-light fa-rotate-left" /></span>
+                  New round
                 </button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </section>
         </main>
       )}

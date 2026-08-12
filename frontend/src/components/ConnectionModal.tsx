@@ -8,19 +8,11 @@ export function ConnectionModal({ connected }: ConnectionModalProps) {
   }
 
   return (
-    <div
-      aria-labelledby="connecting-label"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      role="dialog"
-    >
-      <div className="w-full max-w-[500px] rounded border border-black/20 bg-white shadow-lg">
-        <div className="flex w-full items-center p-4">
-          <strong id="connecting-label">Connecting...</strong>
-          <span className="ml-auto h-8 w-8 animate-pulse rounded-full bg-[#007bff]" role="status">
-            <span className="sr-only">Connecting</span>
-          </span>
-        </div>
+    <div aria-labelledby="connecting-label" aria-modal="true" className="connection-modal" role="dialog">
+      <div className="connection-panel register-panel">
+        <strong id="connecting-label">Connecting...</strong>
+        <span aria-hidden="true" className="connection-pulse" />
+        <span className="sr-only" role="status">Connecting</span>
       </div>
     </div>
   );
