@@ -12,7 +12,6 @@
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "e2e": "bun run build && playwright test",
-    "icons:install": "bun install --config=tools/icons-bunfig.toml",
     "icons:generate": "bun run scripts/generate-icons.ts"
   },
   "dependencies": {

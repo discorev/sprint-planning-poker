@@ -1,3 +1,0 @@
-# Deliberate opt-in used by `bun run icons:install`.
-[install]
-optional = true

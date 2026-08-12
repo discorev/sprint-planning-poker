@@ -118,7 +118,7 @@ bun run e2e       # playwright
 FontAwesome Pro is an optional, fenced dependency: normal installs and builds skip
 it because the app ships generated inline SVG components instead. To add an icon:
 
-1. Run `bun run icons:install` with `FONTAWESOME_PACKAGE_TOKEN` set.
+1. Run `bun install` with `FONTAWESOME_PACKAGE_TOKEN` set (without the token the optional fontawesome-pro dependency is skipped).
 2. Add the icon to the list in `scripts/generate-icons.ts`.
 3. Run `bun run icons:generate`.
 4. Commit the generated icon components.

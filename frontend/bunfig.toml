@@ -1,3 +1,6 @@
-# fontawesome-pro is only needed to regenerate src/components/icons.
-[install]
-optional = false
+# fontawesome-pro (an optional dependency, only needed to regenerate
+# src/components/icons) requires an auth token we don't provide here.
+# Bun skips failed optional dependency fetches with a warning by default,
+# so no [install] override is needed - one was tried previously but it
+# disabled ALL optional deps, which also broke rollup/tailwindcss's
+# platform-native binaries (themselves optionalDependencies).
